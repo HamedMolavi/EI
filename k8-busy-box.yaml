@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: busy-box
+  namespace: default
+  labels:
+    app: busy-box
+spec:
+  selector:
+    matchLabels:
+      app: busy-box
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        app: busy-box
+    spec:
+      containers:
+        - name: busy-box
+          image: devmolavi/busy-box:v1
+          imagePullPolicy: Never
+          env:
+            - name: MEM
+              value: "1024"
+            - name: CPU
+              value: "4746"
+            - name: NET
+              value: "1000"
+          resources:
+            limits:
+              memory: "1024Mi"
+              cpu: "1000m"
+          ports:
+            - name: busy-box-port
+              containerPort: 3000
+      restartPolicy: Always
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: busy-box-service
+  namespace: default
+spec:
+  type: LoadBalancer
+  # type: NodePort
+  selector:
+    app: busy-box
+  ports:
+    - name: http
+      port: 3000
+      targetPort: busy-box-port
+      nodePort: 30100

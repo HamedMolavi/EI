@@ -1,0 +1,19 @@
+{
+  "name": "01-busy-box",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main-busy-box.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.6.8",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "ip": "^2.0.1",
+    "random": "^5.1.1"
+  }
+}

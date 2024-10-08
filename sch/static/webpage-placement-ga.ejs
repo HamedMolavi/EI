@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="refresh" content="5">
+    <title>Document</title>
+    <link rel="stylesheet" href="/style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <h1>Node</h1>
+    <table
+        style="border-color:black;border-style:solid;border-spacing: 0pt; border-width:2px;font-family: 'Courier New', Courier, monospace; text-align: left;">
+        <tr>
+            <th style="width: 200px;">ID</th>
+            <th>:</th>
+            <th>
+                <%= htmlNodeID %>
+            </th>
+        </tr>
+        <tr>
+            <th style="width: 100px;">Address</th>
+            <th>:</th>
+            <th>
+                <%= htmlNodeIP %>
+            </th>
+        </tr>
+        <tr>
+            <th style="width: 100px;">Solution Value</th>
+            <th>:</th>
+            <th>
+                <%= htmlBestSolutionValue %>
+            </th>
+        </tr>
+
+    </table>
+
+    <p>&nbsp;</p>
+
+    <h1>Host Utilisation (GA)</h1>
+    <canvas id="HostUtilisationChart" width="1900" height="300"></canvas>
+
+    <p>&nbsp;</p>
+    <h1>GA Progress</h1>
+    <canvas id="GAProgressChart" width="1900" height="400"></canvas>
+
+    <script>
+        var ctx1 = document.getElementById('HostUtilisationChart');
+        var myChart = new Chart(ctx1, {
+            type: 'bar',
+            data: {
+                labels: <%- JSON.stringify(htmlHostNames) %>,
+                datasets: [
+                    {
+                        label: 'CPU',
+                        backgroundColor: 'rgba(50, 100, 200, 0.5)',
+                        borderColor: 'rgb(50, 50, 50)',
+                        borderWidth: 1,
+                        data: <%- JSON.stringify(htmlHostCpuUtilisation) %>
+                    },
+                    {
+                        label: 'Mem',
+                        backgroundColor: 'rgba(200, 50, 100, 0.5)',
+                        borderColor: 'rgb(50, 50, 50)',
+                        borderWidth: 1,
+                        data: <%- JSON.stringify(htmlHostMemUtilisation) %>
+                    },
+                    {
+                        label: 'Net',
+                        backgroundColor: 'rgba(100, 200, 50, 0.5)',
+                        borderColor: 'rgb(50, 50, 50)',
+                        borderWidth: 1,
+                        data: <%- JSON.stringify(htmlHostNetUtilisation) %>
+                    },
+                ]
+            },
+            options: {
+                animation: false,
+                scales: {
+                    y: {
+                        min: 0,
+                        max: 100
+                    }
+                }
+            }
+        });
+
+        var ctx2 = document.getElementById('GAProgressChart');
+        var myChart = new Chart(ctx2, {
+            type: 'line',
+            data: {
+                labels: <%- JSON.stringify(htmlGenerationNumbers) %>,
+                datasets: [
+                    {
+                        label: 'Best',
+                        backgroundColor: 'rgba(50, 100, 200, 0.5)',
+                        borderColor: 'rgb(50, 50, 50)',
+                        borderWidth: 3,
+                        data: <%- JSON.stringify(htmlGABestSolution) %>
+                    },
+                    {
+                        label: 'Worst',
+                        backgroundColor: 'rgba(200, 50, 100, 0.5)',
+                        borderColor: 'rgb(50, 50, 50)',
+                        borderWidth: 1,
+                        data: <%- JSON.stringify(htmlGAWorstSolution) %>
+                    },
+                    {
+                        label: 'Average',
+                        backgroundColor: 'rgba(100, 200, 50, 0.5)',
+                        borderColor: 'rgb(50, 50, 50)',
+                        borderWidth: 1,
+                        data: <%- JSON.stringify(htmlGAAverageSolution) %>
+                    },
+                ]
+            },
+            options: {
+                animation: false,
+                scales: {
+                    y: {
+                        min: 0
+                    }
+                }
+            }
+        });
+
+    </script>
+</body>
+
+</html>

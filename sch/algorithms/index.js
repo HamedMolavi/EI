@@ -71,12 +71,9 @@ class PlacementAlgorithm {
 
   CalculateHostUtilisation(jobs, placementArray) {
     let ans = {}
-    let fullReport
-    let x1
+    let fullReport = this.CheckConstraints(jobs, placementArray)[1];
 
-    fullReport = this.CheckConstraints(jobs, placementArray)[1];
-
-    for (x1 = 0; x1 < this.hosts.length; x1++) {
+    for (let x1 = 0; x1 < this.hosts.length; x1++) {
       ans[this.hosts[x1].id] = {}
       ans[this.hosts[x1].id]['CpuTotalUsage'] = fullReport['CpuTotalUsage'][x1]
       ans[this.hosts[x1].id]['CpuFreeCapacity'] = fullReport['CpuFreeCapacity'][x1]

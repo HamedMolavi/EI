@@ -26,10 +26,11 @@ solverMVBF.ConfigureMostValuableBestFitParameters({ K8Hosts });
 solverMVBF.placementSolution = undefined;
 
 // solve
-solverMVBF.Solve(K8Jobs);
-console.log({
-  'Algorithm': 'Most-Valuables-Best-Fit',
-  'PlacementSolution': solverMVBF.placementSolution,
-  'HostUtilisation': solverMVBF.placementHostUtilisation['HostUtilisation']
-})
+const answer = solverMVBF.Solve(K8Jobs);
+console.log(answer)
+// console.log({
+//   'Algorithm': 'Most-Valuables-Best-Fit',
+//   'PlacementSolution': solverMVBF.placementSolution,
+//   'HostUtilisation': solverMVBF.placementHostUtilisation['HostUtilisation']
+// })
 

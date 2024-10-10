@@ -4,8 +4,6 @@ const { PlacementAlgorithm, PlacementSolution } = require(".");
 class MostValuableBestFitSolver extends PlacementAlgorithm {
   constructor() {
     super();
-    this.placementSolution = null;
-    this.placementHostUtilisation = null;
   }
 
   ConfigureMostValuableBestFitParameters({ K8Hosts }) {
@@ -39,13 +37,13 @@ class MostValuableBestFitSolver extends PlacementAlgorithm {
       placementArray[originalJobIndex] = freeCapacityList.at(-1)?.hostIndex ?? -1
     }
 
-    this.placementSolution = new PlacementSolution(
+    let placementSolution= new PlacementSolution(
       placementArray,
       this.Calculatevalue(jobs, placementArray)
-    )
-
-    this.placementHostUtilisation = {
-      'HostUtilisation': this.CalculateHostUtilisation(jobs, this.placementSolution.array)
+    );
+    return {
+      placementSolution,
+      'HostUtilisation': this.CalculateHostUtilisation(jobs, placementSolution.array)
     }
   }
 }

@@ -7,31 +7,15 @@ class K8Host {
     this.cpu = cpu
     this.mem = mem
     this.net = net
-    this.q = [];
     this.context = new Context(this);
-    this.context.on("finish", () => {
-      const job = this.q.pop();
-      if (!!job) return this.context.set(job);
-      const tempTimer = setInterval(() => {
-        const job = this.q.pop();
-
-        if (!!job) {
-          this.context.set(job);
-          clearInterval(tempTimer);
-        }
-      }, 100);
-    })
-    const tempTimer = setInterval(() => {
-      const job = this.q.pop();
-      if (!!job) {
-        this.context.set(job);
-        clearInterval(tempTimer);
-      }
-    }, 100);
   }
 
   execute(job) {
-    this.q.push(job)
+    return new Promise((res)=>{
+      const id = job.id;
+      this.context.on(`finish${id}`, res);
+      this.context.set(job);
+    })
   }
 
   toJSON() {
@@ -54,24 +38,35 @@ class Context extends Evented {
     super();
     this.host = host;
     this.ctx = [];
+    this.loop();
   }
 
   set(job) {
-    console.log("running job request")
-    if (!!this.ctx.length) return false;
     this.ctx.push(job);
     this._triggerEvent("set", job);
-    console.log("running job")
-    // execute job
-    setTimeout(() => {
-      console.log("finish job")
-      this.ctx.pop();
-      this._triggerEvent("finish", job);
-    }, 1000 * job.cpu / this.host.cpu);
+    this._triggerEvent(`set${job.id}`, job);
     return true;
   }
 
+  async loop() {
+    while (true) {
+      const job = this.ctx.shift();
+      if (!!job) {
+        await new Promise((res) => {
+          // execute job
+          setTimeout(() => {
+            let result = {id: job.id, time: 1000 * job.cpu / this.host.cpu};
+            this._triggerEvent("finish", result);
+            this._triggerEvent(`finish${job.id}`, result);
+            res(result);
+          }, 1000 * job.cpu / this.host.cpu);
+        })
+      }
+      await new Promise((res) => setTimeout(res, 100));
+    }
+  }
 }
+
 
 module.exports = {
   K8Host

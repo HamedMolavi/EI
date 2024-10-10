@@ -23,7 +23,7 @@ class ConfigAPIReader extends ConfigReader {
     }
     this.endpoint = options?.endpoint;
     this.loaded = false;
-    this.config = { Hosts: [], Jobs: [] };
+    this.config = { Hosts: [] }; //, Jobs: []
   }
 
   load() {
@@ -35,7 +35,7 @@ class ConfigAPIReader extends ConfigReader {
     return false;
   }
   update() {
-    this.config = { Hosts: [], Jobs: [] };
+    this.config = { Hosts: [] }; //, Jobs: []
     return true;
   }
   middleware = (req, res, next) => {
@@ -47,7 +47,7 @@ class ConfigAPIReader extends ConfigReader {
     req.body['Hosts']?.forEach(host => { this.config.Hosts.push(host) });
 
     // Update Job settings
-    req.body['Jobs']?.forEach(job => { this.config.Jobs.push(job) });
+    // req.body['Jobs']?.forEach(job => { this.config.Jobs.push(job) });
     this.loaded = true;
     if (!!this.endpoint?.call) {
       req.body.ans = ans;

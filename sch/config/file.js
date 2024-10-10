@@ -8,13 +8,19 @@ class ConfigFileReader extends ConfigReader {
     super();
     this.path = options?.path ?? path.join(__dirname, "../config.yml");
     this.loaded = false;
-    this.config = {};
+    this.config = {
+      Hosts: [],
+      // Jobs: []
+    };
   }
 
   load() {
     if (!existsSync(this.path)) return false;
     const configFile = readFileSync(this.path, 'utf8');
-    this.config = yaml.load(configFile);
+    const config = yaml.load(configFile);
+    const { Hosts } = config; //, Jobs
+    this.config.Hosts = Hosts;
+    // this.config.Jobs = Jobs;
     this.loaded = true;
     return true;
   }

@@ -1,8 +1,10 @@
 const { Config } = require("./config");
 const express = require('express');
-
 const ip = require('ip');
+const { jobRouter } = require("./routes/job");
+
 const app = express();
+process.conf = new Config({ app, });
 const ipAddress = ip.address();
 const ipPort = 3000;
 
@@ -15,27 +17,26 @@ app.use(express.json({
   verify: undefined
 }));
 
+// setInterval(() => {
+//   let hostIndex = 0;
+//   if (!!process.conf) {
+//     const l = process.conf.jobs.length;
+//     for (let i = 0; i < l; i++) {
+//       const job = process.conf.jobs.pop();
+//       process.conf.hosts[hostIndex]?.execute(job);
+//       hostIndex = (hostIndex + 1) % process.conf.hosts.length;
+//     }
+//   }
+
+// }, parseInt(process.env["TIME_SLOT"] ?? "1000"));
+
+app.use("/job", jobRouter);
+
+
 app.listen(ipPort, () => {
   console.log(`Listening to ${ipAddress}:${ipPort} !!!`);
-  process.conf = new Config({ app, });
   // console.log(process.conf)
-
 })
-
-setInterval(() => {
-  let hostIndex = 0;
-  if (!!process.conf) {
-    const l = process.conf.jobs.length;
-    for (let i = 0; i < l; i++) {
-      const job = process.conf.jobs.pop();
-      process.conf.hosts[hostIndex]?.execute(job);
-      hostIndex = (hostIndex + 1) % process.conf.hosts.length;
-    }
-  }
-
-}, parseInt(process.env["TIME_SLOT"] ?? "1000"));
-
-
 
 
 

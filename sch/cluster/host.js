@@ -13,6 +13,7 @@ class K8Host {
   execute(job) {
     return new Promise((res)=>{
       const id = job.id;
+      if (!!job.emit?.call) this.context.on(`finish${id}`, job.emit);
       this.context.on(`finish${id}`, res);
       this.context.set(job);
     })

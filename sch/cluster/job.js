@@ -6,8 +6,9 @@ const mapper = {
 }
 
 class K8Job {
-  constructor({ id, type, value, cpu, mem, net, sigma }) {
+  constructor({ id, type, value, cpu, mem, net, sigma, emit }) {
     this.id = id
+    this.emit = emit
     this.type = type
     this.value = value
     this.mem = mem

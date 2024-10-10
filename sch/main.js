@@ -18,18 +18,17 @@ const ipPort = 3000;
 
 
 
-// setInterval(() => {
-//   let hostIndex = 0;
-//   if (!!process.conf) {
-//     const l = process.conf.jobs.length;
-//     for (let i = 0; i < l; i++) {
-//       const job = process.conf.jobs.pop();
-//       process.conf.hosts[hostIndex]?.execute(job);
-//       hostIndex = (hostIndex + 1) % process.conf.hosts.length;
-//     }
-//   }
-
-// }, parseInt(process.env["TIME_SLOT"] ?? "1000"));
+if (process.env["SCH_MODE"]?.toLowerCase() === "offline")
+  setInterval(() => {
+    if (!!process.conf) {
+      const l = process.conf.jobs.length;
+      for (let i = 0; i < l; i++) {
+        const job = process.conf.jobs.shift();
+        process.conf.hosts[process.conf.hostIndex]?.execute(job);
+        process.conf.hostIndex = (process.conf.hostIndex + 1) % process.conf.hosts.length;
+      }
+    }
+  }, parseInt(process.env["TIME_SLOT"] ?? "1000"));
 
 app.use("/job", jobRouter);
 

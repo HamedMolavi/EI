@@ -6,10 +6,10 @@ const mapper = {
 }
 
 class K8Job {
-  constructor({ type, value, cpu, mem, net, sigma }) {
+  constructor({ id, type, value, cpu, mem, net, sigma }) {
+    this.id = id
     this.type = type
     this.value = value
-    this.cpu = cpu
     this.mem = mem
     this.net = net
     const distribution = Object.keys(mapper).includes(process.env["DISTRIBUTION"]?.toUpperCase()) ? process.env["DISTRIBUTION"]?.toUpperCase() : 'NORMAL';
@@ -22,11 +22,14 @@ class K8Job {
       'UNIFORM': cpu + sigma
     }[distribution];
     this.distribution = mapper[distribution](param1, param2)
+    // this.cpu = cpu
+    this.cpu = Math.ceil(this.distribution());
   }
 
   toJSON() {
     return (
       {
+        'id': this.id,
         'type': this.type,
         'value': this.value,
         'cpu': this.cpu,

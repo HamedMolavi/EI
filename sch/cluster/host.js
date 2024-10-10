@@ -55,7 +55,7 @@ class Context extends Evented {
         await new Promise((res) => {
           // execute job
           setTimeout(() => {
-            let result = {id: job.id, time: 1000 * job.cpu / this.host.cpu};
+            let result = {...job.toJSON(), time: 1000 * job.cpu / this.host.cpu};
             this._triggerEvent("finish", result);
             this._triggerEvent(`finish${job.id}`, result);
             res(result);

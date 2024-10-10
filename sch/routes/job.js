@@ -9,8 +9,8 @@ router.post("/", async (req, res, next) => {
 
   let results = await Promise.all(
     (req.body['Jobs'] ?? []).map(
-      job => new Promise((resolve) => {
-        process.conf.hosts[hostIndex]?.execute(job).then(resolve);
+      jobObject => new Promise((resolve) => {
+        process.conf.hosts[hostIndex]?.execute(new K8Job(jobObject)).then(resolve);
         hostIndex = (hostIndex + 1) % process.conf.hosts.length;
       })
     )

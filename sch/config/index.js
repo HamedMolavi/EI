@@ -31,21 +31,14 @@ class Config {
     }
     // run config reader from api
     try {
-      const endpoint = (req, res) => {
-        // Update Host settings
-        req.body['Hosts']?.forEach(host => { this.hosts.push(new K8Host(host)) });
-        // Update Job settings
-        // req.body['Jobs']?.forEach(job => { this.jobs.push(new K8Job(job)) });
-        return res.json({ 'Message': req.body.ans });
-      }
-      this.apiReader = new ConfigAPIReader({ path: options?.apiPath, app: options?.app, port: options?.port, endpoint });
+      this.apiReader = new ConfigAPIReader({ path: options?.apiPath, app: options?.app, port: options?.port });
       if (!this.apiReader.load()) console.error("Reading config from API was not successful!");
       else {
         this.apiReader?.config?.Hosts?.forEach((host) => this.hosts.push(new K8Host(host)))
         // this.apiReader?.config?.Jobs?.forEach((job) => this.jobs.push(new K8Job(job)))
       }
     } catch (error) {
-      console.error("Reading config from file was not successful!");
+      console.error("Reading config from API was not successful!");
       console.error(error)
     }
   }

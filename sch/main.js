@@ -4,10 +4,6 @@ const ip = require('ip');
 const { jobRouter } = require("./routes/job");
 
 const app = express();
-process.conf = new Config({ app, });
-const ipAddress = ip.address();
-const ipPort = 3000;
-
 app.use(express.json({
   inflate: true,
   limit: '100kb',
@@ -16,6 +12,11 @@ app.use(express.json({
   type: 'application/json',
   verify: undefined
 }));
+process.conf = new Config({ app, });
+const ipAddress = ip.address();
+const ipPort = 3000;
+
+
 
 // setInterval(() => {
 //   let hostIndex = 0;

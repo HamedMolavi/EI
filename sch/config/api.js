@@ -1,5 +1,6 @@
 const express = require('express');
 const { ConfigReader } = require('./reader');
+const { K8Host } = require('../cluster/host');
 
 
 
@@ -28,8 +29,9 @@ class ConfigAPIReader extends ConfigReader {
 
   load() {
     if (!!this.app) {
-      this.app.post(this.path, this.middleware)
-      if (!!this.endpoint?.call) this.app.post(this.path, this.endpoint)
+      this.app.post(this.path, this.addMiddleware);
+      this.app.delete(this.path, this.removeMiddleware);
+      if (!!this.endpoint?.call) this.app.post(this.path, this.endpoint);
       return true;
     }
     return false;
@@ -38,17 +40,45 @@ class ConfigAPIReader extends ConfigReader {
     this.config = { Hosts: [] }; //, Jobs: []
     return true;
   }
-  middleware = (req, res, next) => {
-    let ans = "Config/Update: "
+  addMiddleware = (req, res, next) => {
+    let ans = "Config/Update:"
     // Update algorithm settings
     // req.body['Algorithms']?.forEach(alg => { });
 
     // Update Host settings
-    req.body['Hosts']?.forEach(host => { this.config.Hosts.push(host) });
+    req.body['Hosts']?.forEach(host => {
+      if (!!process.conf.hosts.some(el => el.id === host.id)) return ans += ` host ${host.id} already exists;`;
+      process.conf.hosts.push(new K8Host(host));
+      this.config.Hosts.push(host);
+      ans += ` host ${host.id} added;`
+      console.log("New host added!", host);
+    });
 
     // Update Job settings
     // req.body['Jobs']?.forEach(job => { this.config.Jobs.push(job) });
     this.loaded = true;
+    if (!!this.endpoint?.call) {
+      req.body.ans = ans;
+      return next();
+    }
+    return res.json({ 'Message': ans });
+  }
+  removeMiddleware = (req, res, next) => {
+    let ans = "Config/Delete:"
+    // Delete algorithm settings
+    // req.body['Algorithms']?.forEach(alg => { });
+
+    // Delete Host settings
+    process.conf.hosts = process.conf.hosts.filter(el => {
+      const flag = !!req.body['Hosts']?.some(host => el.id === host.id);
+      if (flag) {
+        ans += ` host ${el.id} Deleted;`
+        console.log("Deleted host!", el);
+      }
+      return !flag;
+    })
+    // Delete Job settings
+    // req.body['Jobs']?.forEach(job => { this.config.Jobs.push(job) });
     if (!!this.endpoint?.call) {
       req.body.ans = ans;
       return next();

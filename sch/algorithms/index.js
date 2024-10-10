@@ -21,38 +21,13 @@ class PlacementSolution {
 class PlacementAlgorithm {
   constructor() {
     this.hosts = []
-    this.jobs = []
   }
 
-  ImportK8HostsAndJobs({ K8Hosts, K8Jobs }) {
-    // this.hosts = []
-    // this.jobs = []
-
-    K8Hosts.forEach(k8host => {
-      this.hosts.push(
-        new K8Host(
-          k8host['id'],
-          k8host['cpu'],
-          k8host['mem'],
-          k8host['net']
-        )
-      )
-    })
-
-    K8Jobs.forEach(k8job => {
-      this.jobs.push(
-        new K8Job(
-          k8job['id'],
-          k8job['value'],
-          k8job['cpu'],
-          k8job['mem'],
-          k8job['net']
-        )
-      )
-    })
+  ImportK8Hosts({ K8Hosts }) {
+    this.hosts.push(...K8Hosts?.filter(k8host => !this.hosts.some(host => host.id === k8host.id)) ?? [])
   }
 
-  CheckConstraints(placementArray) {
+  CheckConstraints(jobs, placementArray) {
     let cpuTotalUsage = Array(this.hosts.length).fill(0);
     let memTotalUsage = Array(this.hosts.length).fill(0);
     let netTotalUsage = Array(this.hosts.length).fill(0);
@@ -62,13 +37,13 @@ class PlacementAlgorithm {
 
     for (const [jobIndex, hostIndex] of placementArray.entries()) {
       if (hostIndex != -1) {
-        cpuTotalUsage[hostIndex] += this.jobs[jobIndex].cpu;
-        memTotalUsage[hostIndex] += this.jobs[jobIndex].mem;
-        netTotalUsage[hostIndex] += this.jobs[jobIndex].net;
+        cpuTotalUsage[hostIndex] += jobs[jobIndex].cpu;
+        memTotalUsage[hostIndex] += jobs[jobIndex].mem;
+        netTotalUsage[hostIndex] += jobs[jobIndex].net;
 
-        cpuFreeCapacity[hostIndex] -= this.jobs[jobIndex].cpu;
-        memFreeCapacity[hostIndex] -= this.jobs[jobIndex].mem;
-        netFreeCapacity[hostIndex] -= this.jobs[jobIndex].net;
+        cpuFreeCapacity[hostIndex] -= jobs[jobIndex].cpu;
+        memFreeCapacity[hostIndex] -= jobs[jobIndex].mem;
+        netFreeCapacity[hostIndex] -= jobs[jobIndex].net;
       }
     }
 
@@ -90,16 +65,16 @@ class PlacementAlgorithm {
     return [flag, fullReport];
   }
 
-  Calculatevalue(placementArray) {
-    return placementArray.reduce((res, jobIndex)=> res + (jobIndex != -1 ? this.jobs[jobIndex].value : 0), 0);
+  Calculatevalue(jobs, placementArray) {
+    return placementArray.reduce((res, jobIndex) => res + (jobIndex != -1 ? jobs[jobIndex].value : 0), 0);
   }
 
-  CalculateHostUtilisation(placementArray) {
+  CalculateHostUtilisation(jobs, placementArray) {
     let ans = {}
     let fullReport
     let x1
 
-    fullReport = this.CheckConstraints(placementArray)[1];
+    fullReport = this.CheckConstraints(jobs, placementArray)[1];
 
     for (x1 = 0; x1 < this.hosts.length; x1++) {
       ans[this.hosts[x1].id] = {}

@@ -2,6 +2,8 @@ const { Config } = require("./config");
 const express = require('express');
 const ip = require('ip');
 const { jobRouter } = require("./routes/job");
+const envConfigs = require("./config/env");
+envConfigs();
 
 const app = express();
 app.use(express.json({
@@ -17,8 +19,8 @@ const ipAddress = ip.address();
 const ipPort = 3000;
 
 
-
-if (process.env["SCH_MODE"]?.toLowerCase() === "offline")
+if (process.env["SCH_MODE"]?.toLowerCase() === "offline") {
+  console.log("Running offline scheduler loop!")
   setInterval(() => {
     if (!!process.conf) {
       const l = process.conf.jobs.length;
@@ -29,6 +31,7 @@ if (process.env["SCH_MODE"]?.toLowerCase() === "offline")
       }
     }
   }, parseInt(process.env["TIME_SLOT"] ?? "1000"));
+}
 
 app.use("/job", jobRouter);
 

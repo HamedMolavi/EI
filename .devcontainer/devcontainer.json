@@ -1,13 +1,26 @@
 {
-	"name": "Ubuntu Dev Container",
-	"image": "ubuntu:hamed",
+	// "name": "Ubuntu Dev Container",
+	// "image": "ubuntu:hamed",
+	"name": "Yolo",
+	// "image": "ultralytics/ultralytics:latest-cpu",
+	"image": "ultralytics/ultralytics:latest-python",
 	"runArgs": [
-		"--privileged"
+		"--privileged",
+		"--name",
+		"ei-devcontainer",
+		"--ipc=host",
+		"--gpus",
+		"all"
 	],
 	// "remoteUser": "devuser",
 	"mounts": [
 		"source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
 	],
+	"features": {
+		"ghcr.io/devcontainers-extra/features/pylint:2": {
+			"version": "latest"
+		}
+	},
 	"customizations": {
 		"vscode": {
 			"extensions": [
@@ -17,7 +30,7 @@
 				"esbenp.prettier-vscode"
 			],
 			"settings": {
-				"terminal.integrated.defaultProfile.linux": "bash"
+				"terminal.integrated.defaultProfile.linux": "zsh"
 			}
 		}
 	},

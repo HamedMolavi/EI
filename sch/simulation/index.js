@@ -1,60 +1,71 @@
+//sudo perf stat -e cycles python3 test.py
 const random = new (require("random")).Random();
 const isIt = random.uniformBoolean();
-//////////////////////
-// let { group, isSoftDeadline } = isIt() ? { group: "sensitive", isSoftDeadline: isIt() } : { group: "insensitive" };
-const TASK_TYPES = [
-    { type: 'image_processing', mem: 0.1, net: 2.5, cpu: 10, deadline: 10, sensitive: true, isSoftDeadline: true },
-];
-const HOW_MANY_TASKS_IN_A_TIMESLOT_FUNCTION = random.uniformInt(0, 10);
-const TIME_SLOT = 1;
-const HOSTS = [new Host(1, 50), new Host(2, 70)];
-//////////////////////
-let time = 0;
 
 class Task {
-    constructor(id, mem, net, sampleExecutionTime, sensitive, isSoftDeadline, deadline) {
+    constructor(id, type, mem, net, cpuDistribution, sensitive, isSoftDeadline, deadlineT) {
         this.id = id;
+        this.type = type;
         this.mem = mem;
         this.net = net;
-        this.sampleExecutionTime = sampleExecutionTime;
+        this.cpuDistribution = cpuDistribution;
         this.sensitive = sensitive;
         this.isSoftDeadline = isSoftDeadline;
-        this.deadline = deadline;
+        let deadlineTime = sensitive ? time + deadlineT : +Infinity;
+        this.deadlineTime = deadlineTime;
 
+        this.arriveTime = time;
         this.startTime = null;
+        this.completeTime = null;
     }
 }
 
 class Host {
-    constructor(id, transmissionDelay) {
+    constructor(id, mem, net, cpu, transmissionDelay) {
         this.id = id;
+        this.mem = mem; this.net = net; this.cpu = cpu;
         this.transmissionDelay = transmissionDelay;
         this.currentTask = null;
         this.taskReceivedTime = null;
+        this.taskCompleteTime = +Infinity;
+        this.reward = 0;
+        this.penalty = 0;
     }
 
     receiveTask(task) {
         this.currentTask = task;
         this.taskReceivedTime = time;
+        const expectedCpuUsage = task.cpuDistribution();
+        console.log(expectedCpuUsage)
+        const expectedExecutionT = (expectedCpuUsage / this.cpu) * 1000; //ms
+        this.taskCompleteTime = time + this.transmissionDelay + expectedExecutionT;
+        console.log(`Host ${this.id}: Received task ${task.id}, complete expctation at ${this.taskCompleteTime}`);
     }
 
     checkCompleted() {
         let task = this.currentTask;
-        const expectedExecutionTime = task?.sampleExecutionTime();
-        if (!!task &&
-            (time - this.taskReceivedTime) >= (this.transmissionDelay + expectedExecutionTime)) {
-
-            if (time <= task.deadline) {
-                this.reward += expectedExecutionTime * 1.5;
-            } else if (task.isSoftDeadline) {
-                this.cost += (time - task.deadline) * 0.5;
-            } else {
-                this.cost += 100;
-                console.log(`Task ${task.id} missed hard deadline and was aborted.`);
+        let r;
+        if (!!task) {
+            if (time >= this.taskCompleteTime) {
+                task.completeTime = this.taskCompleteTime;
+                if (task.sensitive) {
+                    r = REWARDS[`${task.isSoftDeadline ? 'soft' : 'hard'}-sensitive-${time >= task.deadlineTime ? 'violate' : 'complete'}`](task);
+                    if (r > 0) this.reward += r;
+                    else this.penalty += r;
+                } else {
+                    r = REWARDS['insensitive'](task);
+                    this.reward += r;
+                }
+                console.log(`Host ${this.id}: Completed task ${task.id} at time ${time}`);
+                this.currentTask = null;
+            } else if (task.sensitive && !task.isSoftDeadline && time >= task.deadlineTime) {
+                console.log(`Host ${this.id}: Abort task ${task.id}, now ${time} - deadline ${task.deadlineTime}`);
+                this.currentTask = null;
+                r = REWARDS['hard-sensitive-violate'](task);
+                this.penalty += r;
             }
-            console.log(`Host ${this.id} completed task ${task.id} at time ${time}`);
-            this.currentTask = null;
         }
+        return r;
     }
 }
 
@@ -64,7 +75,7 @@ class Scheduler {
         this.queueSensitive = [];
         this.queueInsensitive = [];
         this.reward = 0;
-        this.cost = 0;
+        this.penalty = 0;
     }
 
     addTask(task) {
@@ -77,38 +88,22 @@ class Scheduler {
 
     checkHosts() {
         this.hosts.forEach(host => {
-            if (host.currentTask && (time - host.taskReceivedTime) >= host.transmissionDelay) {
-                let task = host.currentTask;
-                let elapsed = time - task.startTime;
-                let expectedExecutionTime = task.sampleExecutionTime();
-                let probabilityOfCompletion = Math.min(1, elapsed / expectedExecutionTime);
-
-                if (Math.random() < probabilityOfCompletion) {
-                    if (time <= task.deadline) {
-                        this.reward += expectedExecutionTime * 1.5;
-                    } else if (task.isSoftDeadline) {
-                        this.cost += (time - task.deadline) * 0.5;
-                    } else {
-                        this.cost += 100;
-                        console.log(`Task ${task.id} missed hard deadline and was aborted.`);
-                    }
-                    console.log(`Host ${host.id} completed task ${task.id} at time ${time}`);
-                    host.currentTask = null;
-                }
-            }
+            const r = host.checkCompleted();
+            if (!!r && r > 0) this.reward += r;
+            else if (!!r) this.penalty += r;
         });
     }
 
     schedule() {
-        let freeHosts = this.hosts.filter(h => !h.currentTask && !h.pendingTask);
+        let freeHosts = this.hosts.filter(h => !h.currentTask);
         while (freeHosts.length > 0) {
             let task = this.selectTask();
             if (!task) break;
             let host = freeHosts.shift();
             host.receiveTask(task);
+            task.startTime = time;
         }
         this.evaluateSystemLoad();
-        console.log(`Current Reward: ${this.reward}, Current Cost: ${this.cost}`);
     }
 
     selectTask() {
@@ -123,36 +118,61 @@ class Scheduler {
     evaluateSystemLoad() {
         let load = this.queueSensitive.length + this.queueInsensitive.length;
         let label = load > 5 ? "High Load" : "Normal Load";
+        console.log(`Current Reward: ${this.reward}, Current Penalty: ${this.penalty}`);
         console.log(`System Load: ${label}`);
     }
 }
 
+//////////////////////
+//mem: KB, net: Mib, cpu: Hz, deadlineT: ms
+const TASK_TYPES = [
+    {
+        taskType: 'poisson_image_processing', mem: 256, net: 5, cpu: 28_000_000, deadlineT: 20, sensitive: true, isSoftDeadline: false,
+        dist: random.poisson(28_000_000)
+    },
+    {
+        taskType: 'normal_image_processing', mem: 256, net: 5, cpu: 28_000_000, deadlineT: 20, sensitive: true, isSoftDeadline: false,
+        dist: random.normal(28_000_000, 5_000_000)
+    },
+];
+const REWARDS = {
+    'hard-sensitive-complete': () => 1,
+    'hard-sensitive-violate': () => -1,
+    'soft-sensitive-complete': () => 1,
+    'soft-sensitive-violate': () => -1,
+    'insensitive': () => 1,
+}
+const HOW_MANY_TASKS_IN_A_TIMESLOT_FUNCTION = random.uniformInt(0, 2);
+const TIME_SLOT = 10; // ms
+const MAX_TIME = 50; // ms
+const HOSTS = [new Host(1, 16_777_216, 10_000, 3_500_000_000, 1), new Host(2, 16_777_216, 10_000, 3_500_000_000, 2)];
+//////////////////////
+let time = 0;
+let lastTaskId = 0;
 const scheduler = new Scheduler(HOSTS);
 
-function generateRandomTask(type) {
-    let id = Math.floor(Math.random() * 1000);
-    let dist = random.poisson((lambda = type.cpu));
-    let deadline = type.sensitive ? time + type.deadline : +inf;
-    return new Task(id, type.type, type.mem, type.net, dist, type.sensitive, type.isSoftDeadline, deadline);
+function generateRandomTask() {
+    const type = random.choice(TASK_TYPES);
+    lastTaskId += 1;
+    return new Task(lastTaskId, type.taskType, type.mem, type.net, type.dist, type.sensitive, type.isSoftDeadline, type.deadlineT);
 }
 
 function randomTaskArrival() {
     const j = HOW_MANY_TASKS_IN_A_TIMESLOT_FUNCTION();
+    const tasks = [];
     for (let i = 0; i < j; i++) {
-        const type = random.choice(TASK_TYPES);
-        let task = generateRandomTask(type);
-        console.log(`New task arrived: ${task.id}, Group: ${task.sensitive ? 'sensitive with deadline' + task.deadline : 'insensitive'} at time ${time}`);
+        let task = generateRandomTask();
+        console.log(`New task arrived: ${task.id}, Group: ${task.sensitive ? 'sensitive with deadline ' + task.deadlineTime + ' ms' : 'insensitive'} at time ${time}`);
         scheduler.addTask(task);
+        tasks.push(task);
     }
+    return tasks;
 }
 
-while (time < 10000) { // Simulate an arbitrary amount of time
-    randomTaskArrival();
+while (time <= MAX_TIME || scheduler.queueSensitive.length || scheduler.queueInsensitive.length) { // Simulate an arbitrary amount of time
+    console.log('----', time)
+    if (time <= MAX_TIME) randomTaskArrival();
     scheduler.checkHosts();
     scheduler.schedule();
     time += TIME_SLOT;
-}
-for (let index = 0; index < array.length; index++) {
-    const element = array[index];
-
 }

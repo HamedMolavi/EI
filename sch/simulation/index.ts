@@ -1,9 +1,22 @@
 //sudo perf stat -e cycles python3 test.py
-const random = new (require("random")).Random();
+
+import { Random } from "random";
+
+const random = new Random();
+// const random = new (require("random")).Random();
 const isIt = random.uniformBoolean();
 
 class Task {
-    constructor(id, type, mem, net, cpuDistribution, sensitive, isSoftDeadline, deadlineT) {
+    constructor(
+        public id: number,
+        public type: string,
+        public mem: number,
+        public net: number,
+        public cpuDistribution: () => number,
+        public sensitive: boolean,
+        public isSoftDeadline: boolean,
+        public deadlineT: number
+    ) {
         this.id = id;
         this.type = type;
         this.mem = mem;

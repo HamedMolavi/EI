@@ -7,7 +7,7 @@ const { ConfigFileReader } = require("./file");
 
 
 
-class Config {
+export class Config {
   hosts
   hostIndex
   jobs
@@ -52,8 +52,4 @@ class Config {
       api: this.apiReader?.loaded
     }
   }
-}
-
-module.exports = {
-  Config
 }

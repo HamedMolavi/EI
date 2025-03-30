@@ -1,29 +1,33 @@
 Hosts:
   - id: Host-1
-    ip: 172.16.215.250
-    cpu: 4000
-    mem: 4000
-    net: 1000000
-  # - id: Host-2
-  #   ip: 172.16.215.251
-  #   cpu: 32000
-  #   mem: 32000
-  #   net: 1000000
-  # - id: Host-3
-  #   ip: 172.16.215.252
-  #   cpu: 8000
-  #   mem: 8000
-  #   net: 1000000
-  # - id: Host-4
-  #   ip: 172.16.215.253
-  #   cpu: 8000
-  #   mem: 8000
-  #   net: 1000000
+    cpu: 3500000000
+    mem: 16777216
+    net: 10000
+    transmissionDelay: 10
+    ip: 0.0.0.0
 
-# Jobs:
-#   - type: Job-1
-#     value: 20
-#     cpu: 2592
-#     mem: 2242
-#     net: 55961
-#     sigma: 1
+Tasks:
+  - id: 1
+    type: normal_image_processing
+    arriveTime: 0
+    value: 1
+    sensitive: true
+    isSoftDeadline: true
+  - id: 2
+    type: normal_image_processing
+    arriveTime: 0
+    value: 1
+    sensitive: true
+    isSoftDeadline: true
+  - id: 3
+    type: normal_image_processing
+    arriveTime: 0
+    value: 1
+    sensitive: true
+    isSoftDeadline: true
+  - id: 4
+    type: normal_image_processing
+    arriveTime: 0
+    value: 1
+    sensitive: true
+    isSoftDeadline: true

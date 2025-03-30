@@ -1,42 +1,54 @@
 import { Task } from "./task";
 import { Evented } from "../utils/queue";
+import { showTime } from "../utils/time";
 
-export class Host {
-  context: Context;
-  constructor(
-    public id: number,
-    public cpu: number,
-    public mem: number,
-    public net: number,
-    public transmissionDelay: number,
-    public ip: number,
+export abstract class BaseHost {
+  abstract init(): void;
+  abstract execute(task: Task, ...args: any[]): void;
+
+  constructor(public id: string, public mem: number, public net: number, public cpu: number, public transmissionDelay: number, public ip: string) {
+    this.init();
+  }
+
+  toJSON() { return ({ 'id': this.id, 'ip': this.ip, 'cpu': this.cpu, 'mem': this.mem, 'net': this.net }) }
+
+}
+
+
+export class Host extends BaseHost {
+  context!: Context;
+  reward!: number;
+  penalty!: number;
+  constructor(id: string, cpu: number, mem: number, net: number, transmissionDelay: number, ip: string,
   ) {
+    super(id, cpu, mem, net, transmissionDelay, ip);
+  }
+  init() {
     this.context = new Context(this);
+    this.reward = 0;
+    this.penalty = 0;
+  }
+
+  isBusy() {
+    return !!this.context.ctx.length;
   }
 
   execute(task: Task) {
+    const expectedExecutionT = (task.cpu / this.cpu) * 1000; //ms
+    const taskCompleteTime = Date.now() + expectedExecutionT;
+    console.log(`Host ${this.id}: Received task ${task.id}, complete expctation at ${showTime(taskCompleteTime)}`);
     return new Promise((res) => {
       const id = task.id;
       if (!!task.emit?.call) this.context.on(`finish${id}`, task.emit);
-      this.context.on(`finish${id}`, res);
+      this.context.on(`finish${id}`, (result: any) => {
+        console.log(`Host ${this.id}: Finished task ${task.id}, at ${showTime(Date.now())}`);
+        res(result)
+      });
       this.context.set(task);
     })
   }
 
-  toJSON() {
-    return (
-      {
-        'id': this.id,
-        'ip': this.ip,
-        'cpu': this.cpu,
-        'mem': this.mem,
-        'net': this.net
-      }
-    )
-  }
 }
-
-
 
 class Context extends Evented {
   ctx: Task[];
@@ -71,54 +83,3 @@ class Context extends Evented {
     }
   }
 }
-
-
-
-// class Host {
-//   constructor(id, mem, net, cpu, transmissionDelay) {
-//       this.id = id;
-//       this.mem = mem; this.net = net; this.cpu = cpu;
-//       this.transmissionDelay = transmissionDelay;
-//       this.currentTask = null;
-//       this.taskReceivedTime = null;
-//       this.taskCompleteTime = +Infinity;
-//       this.reward = 0;
-//       this.penalty = 0;
-//   }
-
-//   receiveTask(task) {
-//       this.currentTask = task;
-//       this.taskReceivedTime = time;
-//       const expectedCpuUsage = task.cpuDistribution();
-//       console.log(expectedCpuUsage)
-//       const expectedExecutionT = (expectedCpuUsage / this.cpu) * 1000; //ms
-//       this.taskCompleteTime = time + this.transmissionDelay + expectedExecutionT;
-//       console.log(`Host ${this.id}: Received task ${task.id}, complete expctation at ${this.taskCompleteTime}`);
-//   }
-
-//   checkCompleted() {
-//       let task = this.currentTask;
-//       let r;
-//       if (!!task) {
-//           if (time >= this.taskCompleteTime) {
-//               task.completeTime = this.taskCompleteTime;
-//               if (task.sensitive) {
-//                   r = REWARDS[`${task.isSoftDeadline ? 'soft' : 'hard'}-sensitive-${time >= task.deadlineTime ? 'violate' : 'complete'}`](task);
-//                   if (r > 0) this.reward += r;
-//                   else this.penalty += r;
-//               } else {
-//                   r = REWARDS['insensitive'](task);
-//                   this.reward += r;
-//               }
-//               console.log(`Host ${this.id}: Completed task ${task.id} at time ${time}`);
-//               this.currentTask = null;
-//           } else if (task.sensitive && !task.isSoftDeadline && time >= task.deadlineTime) {
-//               console.log(`Host ${this.id}: Abort task ${task.id}, now ${time} - deadline ${task.deadlineTime}`);
-//               this.currentTask = null;
-//               r = REWARDS['hard-sensitive-violate'](task);
-//               this.penalty += r;
-//           }
-//       }
-//       return r;
-//   }
-// }

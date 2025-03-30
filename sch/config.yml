@@ -15,19 +15,19 @@ Tasks:
     isSoftDeadline: true
   - id: 2
     type: normal_image_processing
-    arriveTime: 10
+    arriveTime: 0
     value: 1
     sensitive: true
     isSoftDeadline: true
   - id: 3
     type: normal_image_processing
-    arriveTime: 20
+    arriveTime: 0
     value: 1
     sensitive: true
     isSoftDeadline: true
   - id: 4
     type: normal_image_processing
-    arriveTime: 30
+    arriveTime: 0
     value: 1
     sensitive: true
     isSoftDeadline: true

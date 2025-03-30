@@ -51,8 +51,10 @@ export class Scheduler extends BaseScheduler {
   hosts!: Host[]
   queueSensitive!: Task[];
   queueInsensitive!: Task[];
+  dispatching: boolean;
   constructor(hosts: Host[]) {
     super(hosts);
+    this.dispatching = false;
   }
   isBusyHost(): boolean {
     return this.hosts.some(host => host.isBusy());
@@ -66,16 +68,19 @@ export class Scheduler extends BaseScheduler {
   }
 
   async dispatch() {
-    let task: Task | undefined;
-    while (task = this.selectTask()) {
+    if (this.dispatching) return;
+    this.dispatching = true;
+    while (true) {
+      let task = this.selectTask();
       let host = random.choice(this.hosts);
-      if (!host) break;
+      if (!task || !host) break;
       console.log(`Dispatching Task: ${task.id}, time ${showTime(Date.now())}`);
       await (new Promise((res) => setTimeout(res, host?.transmissionDelay ?? 0)));
       host.execute(task);
       task.startTime = Date.now();
     }
     this.evaluateSystemLoad();
+    this.dispatching = false;
   }
 
   resorte() {

@@ -32,6 +32,7 @@ def append_number_to_file(filename, number1, number2):
 
 
 if __name__ == '__main__':
+  print("Running on ", "sample image" if args.single_input else "all images", "and", "cpu" if args.cpu else "gpu", )
   for i in range(l):
     image = join(image_dir, sample_image if args.single_input else images[i])
     # Perform detection on an image
@@ -43,4 +44,3 @@ if __name__ == '__main__':
     append_number_to_file(join(
       current_file_directory, time_str + device + '.txt'),
         (end - start) / 10e6, process_time)
-    break

@@ -8,7 +8,6 @@
 		"--privileged",
 		"--name",
 		"ei-devcontainer",
-		"--ipc=host",
 		"--gpus",
 		"all"
 	],

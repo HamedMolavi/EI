@@ -3,7 +3,7 @@
 	// "image": "ubuntu:hamed",
 	"name": "Yolo",
 	// "image": "ultralytics/ultralytics:latest-cpu",
-	"image": "ultralytics/ultralytics:latest-python",
+	"image": "ultralytics/ultralytics:latest",
 	"runArgs": [
 		"--privileged",
 		"--name",

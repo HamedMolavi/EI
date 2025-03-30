@@ -1,5 +1,6 @@
 import { Task } from "./task";
 import { Evented } from "../utils/queue";
+import { showTime } from "../utils/time";
 
 export abstract class BaseHost {
   abstract init(): void;
@@ -16,19 +17,33 @@ export abstract class BaseHost {
 
 export class Host extends BaseHost {
   context!: Context;
+  reward!: number;
+  penalty!: number;
   constructor(id: string, cpu: number, mem: number, net: number, transmissionDelay: number, ip: string,
   ) {
     super(id, cpu, mem, net, transmissionDelay, ip);
   }
   init() {
     this.context = new Context(this);
+    this.reward = 0;
+    this.penalty = 0;
+  }
+
+  isBusy() {
+    return !!this.context.ctx.length;
   }
 
   execute(task: Task) {
+    const expectedExecutionT = (task.cpu / this.cpu) * 1000; //ms
+    const taskCompleteTime = Date.now() + expectedExecutionT;
+    console.log(`Host ${this.id}: Received task ${task.id}, complete expctation at ${showTime(taskCompleteTime)}`);
     return new Promise((res) => {
       const id = task.id;
       if (!!task.emit?.call) this.context.on(`finish${id}`, task.emit);
-      this.context.on(`finish${id}`, res);
+      this.context.on(`finish${id}`, (result: any) => {
+        console.log(`Host ${this.id}: Finished task ${task.id}, at ${showTime(Date.now())}`);
+        res(result)
+      });
       this.context.set(task);
     })
   }

@@ -1,6 +1,8 @@
-import { BaseHost } from "./host";
-import { BaseTask } from "./task";
-
+import { Random } from "random";
+import { BaseHost, Host } from "./host";
+import { BaseTask, Task } from "./task";
+import { showTime } from "../utils/time";
+const random = new Random();
 export abstract class BaseScheduler {
   queueSensitive!: BaseTask[];
   queueInsensitive!: BaseTask[];
@@ -34,14 +36,50 @@ export abstract class BaseScheduler {
     } else if (this.queueInsensitive.length > 0) {
       return this.queueInsensitive.shift();
     }
-    return null;
+    return;
   }
 
   evaluateSystemLoad() {
     let load = this.queueSensitive.length + this.queueInsensitive.length;
     let label = load > 5 ? "High Load" : "Normal Load";
-    console.log(`Current Reward: ${this.reward}, Current Penalty: ${this.penalty}`);
-    console.log(`System Load: ${label}`);
+    // console.log(`Current Reward: ${this.reward}, Current Penalty: ${this.penalty}`);
+    // console.log(`System Load: ${label}`);
+  }
+
+}
+export class Scheduler extends BaseScheduler {
+  hosts!: Host[]
+  queueSensitive!: Task[];
+  queueInsensitive!: Task[];
+  constructor(hosts: Host[]) {
+    super(hosts);
+  }
+  isBusyHost(): boolean {
+    return this.hosts.some(host => host.isBusy());
+  }
+
+  updateRewards() {
+    const { reward, penalty } =
+      this.hosts.reduce((res, cur) => { res['reward'] += cur['reward']; res['penalty'] += cur['penalty']; return res; }, { reward: 0, penalty: 0 });
+    this.reward = reward;
+    this.penalty = penalty;
+  }
+
+  async dispatch() {
+    let task: Task | undefined;
+    while (task = this.selectTask()) {
+      let host = random.choice(this.hosts);
+      if (!host) break;
+      console.log(`Dispatching Task: ${task.id}, time ${showTime(Date.now())}`);
+      await (new Promise((res) => setTimeout(res, host?.transmissionDelay ?? 0)));
+      host.execute(task);
+      task.startTime = Date.now();
+    }
+    this.evaluateSystemLoad();
+  }
+
+  resorte() {
+
   }
 
 }

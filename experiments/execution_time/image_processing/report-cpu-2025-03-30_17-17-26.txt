@@ -1,0 +1,16 @@
+Statistical Report
+==================================================
+System Mean: 48.42982
+Program Mean: 56.47788
+System Median: 47.21195
+Program Median: 55.34319
+System Variance: 13.95247
+Program Variance: 18.69210
+System Std Dev: 3.73530
+Program Std Dev: 4.32344
+System Min: 34.48061
+Program Min: 40.83940
+System Max: 65.01584
+Program Max: 124.46579
+Correlation: 0.97289
+==================================================

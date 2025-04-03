@@ -7,6 +7,7 @@ import argparse
 import datetime
 
 parser = argparse.ArgumentParser()
+parser.add_argument("--video", help='URL of the video', type=str)
 parser.add_argument('--single-input', action='store_true',
                     help='Run in single input mode')
 parser.add_argument('--cpu', action='store_true', help='Run on cpu')
@@ -15,7 +16,7 @@ args = parser.parse_args()
 image_dir = '/ultralytics/val2017'
 current_file_directory = dirname(abspath(__file__))
 now = datetime.datetime.now()
-time_str = now.strftime("%Y-%m-%d_%H-%M-%S")
+time_str = now.strftime("%m%d%M%S")
 device = "cpu" if args.cpu else "0"
 
 
@@ -32,9 +33,25 @@ def append_number_to_file(filename, number1, number2):
 
 
 if __name__ == '__main__':
-  print("Running on ", "sample image" if args.single_input else "all images", "and", "cpu" if args.cpu else "gpu", )
+  
+  print("Running on ",
+      f"video {args.video}" if args.video is not None else "sample image" if args.single_input else "all images",
+      "and", "cpu" if args.cpu else "gpu"
+      )
+  if args.video is not None:
+    import cv2 as cv
+    cap = cv.VideoCapture(args.video)
+    if not cap.isOpened():
+      print("Error: Could not open video file.")
+      exit(1)
   for i in range(l):
-    image = join(image_dir, sample_image if args.single_input else images[i])
+    
+    if args.video is not None:
+      ret, image = cap.read()
+      if not ret:
+        break
+    else:
+      image = join(image_dir, sample_image if args.single_input else images[i])
     # Perform detection on an image
     start = process_time_ns()
     results = model(image, verbose=True, device=device)
@@ -42,5 +59,5 @@ if __name__ == '__main__':
     # Execution time for detection
     process_time = sum(results[0].speed.values())
     append_number_to_file(join(
-      current_file_directory, time_str + device + '.txt'),
+      current_file_directory, ("cpu-" if args.cpu else "gpu-") + time_str + '.txt'),
         (end - start) / 10e6, process_time)

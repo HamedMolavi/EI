@@ -1,9 +1,16 @@
+export enum TaskState {
+  PENDING = 'pending',
+  STARTED = 'started',
+  COMPLETED = 'completed',
+  CANCELLED = 'cancelled',
+}
 
 
 export abstract class BaseTask {
   startTime?: number;
   completeTime?: number;
   deadlineTime: number;
+  state: TaskState;
   constructor(
     public id: string,
     public type: string,
@@ -22,8 +29,18 @@ export abstract class BaseTask {
     this.deadlineTime = sensitive ? arriveTime + deadlineT : Infinity;
     this.startTime = undefined;
     this.completeTime = undefined;
+    this.state = TaskState.PENDING;
   }
-  toJSON() { return ({ 'id': this.id, 'type': this.type, 'value': this.value, 'cpu': this.cpu, 'mem': this.mem, 'net': this.net }) }
+  toJSON() { return ({ 'state': this.state, 'id': this.id, 'type': this.type, 'value': this.value, 'cpu': this.cpu, 'mem': this.mem, 'net': this.net }) }
+  started() {
+    this.state = TaskState.STARTED;
+  }
+  completed() {
+    this.state = TaskState.COMPLETED;
+  }
+  canceled() {
+    this.state = TaskState.CANCELLED;
+  }
 }
 
 

@@ -2,6 +2,7 @@ import { GLOBAL_TIME } from ".";
 import { BaseHost } from "../cluster/host";
 import { REWARDS } from "../types/taskTypes";
 import { Task } from "./task";
+import { TaskState } from "../cluster/task";
 
 export class Host extends BaseHost {
   currentTask: undefined | Task;
@@ -29,6 +30,9 @@ export class Host extends BaseHost {
     this.taskCompleteTime = GLOBAL_TIME.value + this.transmissionDelay + expectedExecutionT;
     console.log(`Host ${this.id}: Received task ${task.id}, complete expctation at ${this.taskCompleteTime}`);
 
+    // Mark task as started
+    task.started();
+
     const p = new Promise((res) => {
       GLOBAL_TIME.onChange(this.checkCompleted.bind(this))
     });
@@ -39,8 +43,14 @@ export class Host extends BaseHost {
     let task = this.currentTask;
     let r;
     if (!!task) {
+      if (task.state === TaskState.CANCELLED) {
+        console.log(`Host ${this.id}: Task ${task.id} was cancelled`);
+        this.currentTask = undefined;
+        return;
+      }
+
       if (GLOBAL_TIME.value >= this.taskCompleteTime) {
-        task.completeTime = this.taskCompleteTime;
+        task.completed();
         if (task.sensitive) {
           r = REWARDS[`${task.isSoftDeadline ? 'soft' : 'hard'}-sensitive-${GLOBAL_TIME.value >= task.deadlineTime ? 'violate' : 'complete'}`](task);
           if (r > 0) this.reward += r;

@@ -40,7 +40,8 @@ function randomTaskArrival() {
   }
   return tasks;
 }
-while (GLOBAL_TIME.value <= MAX_TIME || scheduler.queueSensitive.length || scheduler.queueInsensitive.length || scheduler.isBusyHost()) {
+
+while (GLOBAL_TIME.value <= MAX_TIME || scheduler.queue.size() > 0 || scheduler.isBusyHost()) {
   if (GLOBAL_TIME.value <= MAX_TIME) randomTaskArrival().forEach(scheduler.addTask.bind(scheduler))
   scheduler.updateRewards();
   scheduler.dispatch();

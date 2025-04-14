@@ -104,21 +104,20 @@ def generate_plots(system_times, program_times, output_folder="plots"):
 
 
 def checked(file):
-  return any(map(lambda el: el == 'report-' + file, os.listdir(input_dir)))
+  return any(map(lambda el: el == ('plot-'+file).replace(".txt",""), os.listdir(input_dir)))
 
 
 def main():
   # Change this to your actual file name
-  for file in filter(lambda el: el.find(".txt") > 0 and el.find("report-") == -1, os.listdir(input_dir)):
-    if checked(file):
-      continue
+  for file in filter(lambda el: el.find(".txt") > 0 and not checked(el), os.listdir(input_dir)):
     system_times, program_times = load_data(input_dir + file)
-    # Compute statistics and save report
-    stats = compute_statistics(system_times, program_times)
-    save_report(stats, input_dir + 'report-' + file)
-
+    print(file)
+    continue
     # Generate visualizations
     generate_plots(system_times, program_times, (input_dir+'plot-'+file).replace(".txt",""))
+    # Compute statistics and save report
+    stats = compute_statistics(system_times, program_times)
+    save_report(stats, (input_dir+'plot-'+file).replace(".txt","") + 'report-' + file)
 
     print(file, "Statistical analysis and visualizations completed!")
 

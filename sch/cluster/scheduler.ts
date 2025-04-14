@@ -2,58 +2,46 @@ import { Random } from "random";
 import { BaseHost, Host } from "./host";
 import { BaseTask, Task } from "./task";
 import { showTime } from "../utils/time";
+import { BaseStrategy } from "../simulation/strategies/strategy";
+import { Queue } from "../queues/Queue";
 const random = new Random();
 export abstract class BaseScheduler {
-  queueSensitive!: BaseTask[];
-  queueInsensitive!: BaseTask[];
   reward!: number;
   penalty!: number;
   abstract dispatch(...args: any[]): void
-  abstract resorte(...args: any[]): void
   abstract isBusyHost(...args: any[]): boolean
 
-  constructor(public hosts: BaseHost[]) {
+  constructor(public hosts: BaseHost[], public strategy: BaseStrategy, public queue: Queue) {
     this.init();
   }
   init() {
-    this.queueSensitive = [];
-    this.queueInsensitive = [];
     this.reward = 0;
     this.penalty = 0;
   }
 
   addTask(task: BaseTask) {
-    if (task.sensitive) {
-      this.queueSensitive.push(task);
-    } else {
-      this.queueInsensitive.push(task);
-    }
+    this.queue.addTask(task);
   }
 
-  selectTask() {
-    if (this.queueSensitive.length > 0) {
-      return this.queueSensitive.shift();
-    } else if (this.queueInsensitive.length > 0) {
-      return this.queueInsensitive.shift();
-    }
-    return;
-  }
 
   evaluateSystemLoad() {
-    let load = this.queueSensitive.length + this.queueInsensitive.length;
+    let load = this.queue.size();
     let label = load > 5 ? "High Load" : "Normal Load";
     // console.log(`Current Reward: ${this.reward}, Current Penalty: ${this.penalty}`);
     // console.log(`System Load: ${label}`);
   }
 
+  setStrategy(strategy: BaseStrategy) {
+    this.strategy = strategy;
+  }
 }
 export class Scheduler extends BaseScheduler {
   hosts!: Host[]
   queueSensitive!: Task[];
   queueInsensitive!: Task[];
   dispatching: boolean;
-  constructor(hosts: Host[]) {
-    super(hosts);
+  constructor(hosts: Host[], strategy: BaseStrategy, queue: Queue) {
+    super(hosts, strategy, queue);
     this.dispatching = false;
   }
   isBusyHost(): boolean {
@@ -71,7 +59,7 @@ export class Scheduler extends BaseScheduler {
     if (this.dispatching) return;
     this.dispatching = true;
     while (true) {
-      let task = this.selectTask();
+      let task = this.queue.getTask();
       let host = random.choice(this.hosts);
       if (!task || !host) break;
       console.log(`Dispatching Task: ${task.id}, time ${showTime(Date.now())}`);
@@ -81,10 +69,6 @@ export class Scheduler extends BaseScheduler {
     }
     this.evaluateSystemLoad();
     this.dispatching = false;
-  }
-
-  resorte() {
-
   }
 
 }

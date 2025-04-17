@@ -6,6 +6,8 @@ import { Host } from "./host";
 import { TASK_TYPES } from "../types/taskTypes";
 import { Scheduler } from "./scheduler";
 import { Time } from "./time";
+import { FIFOStrategy } from "../strategies/FIFOStrategy";
+import { FIFOQueue } from "../queues/FIFOQueue";
 
 export let GLOBAL_TIME = new Time();
 const random = new Random();
@@ -18,7 +20,9 @@ const MAX_TIME = 50; // ms
 const HOSTS = [new Host('1', 16_777_216, 10_000, 3_500_000_000, 1), new Host('2', 16_777_216, 10_000, 3_500_000_000, 2)];
 //////////////////////
 let lastTaskId = 0;
-const scheduler = new Scheduler(HOSTS);
+const strategy = new FIFOStrategy();
+const queue = new FIFOQueue();
+const scheduler = new Scheduler(HOSTS, strategy, queue);
 
 function generateRandomTask() {
   const type = random.choice(Object.values(TASK_TYPES));

@@ -1,4 +1,4 @@
-import { Queue } from "./Queue";
+import { BaseQueue } from "./Queue";
 import { Task } from "../simulation/task";
 import { TaskState } from "../cluster/task";
 
@@ -6,7 +6,7 @@ import { TaskState } from "../cluster/task";
  * Priority Queue implementation
  * Tasks are ordered by their priority (higher priority first)
  */
-export class PriorityQueue extends Queue {
+export class PriorityQueue extends BaseQueue {
   protected tasks: { sensitive: Task[], insensitive: Task[] } = { sensitive: [], insensitive: [] };
 
   constructor() {
@@ -33,10 +33,10 @@ export class PriorityQueue extends Queue {
   }
 
 
-  /**
-   * Get the next task to be processed (highest priority task)
-   * @returns The next task or null if the queue is empty
-   */
+  removeTask() {
+
+  }
+
   getTask(): Task | undefined {
     return this.tasks.sensitive.shift() || this.tasks.insensitive.shift();
   }

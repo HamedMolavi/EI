@@ -4,7 +4,7 @@ import { TaskState } from "../cluster/task";
 /**
  * Base Queue class that provides common functionality for all queue types
  */
-export abstract class Queue {
+export abstract class BaseQueue {
   constructor(protected name: string) {
   }
 

@@ -2,21 +2,22 @@ import { GLOBAL_TIME } from ".";
 import { BaseScheduler } from "../cluster/scheduler";
 import { Host } from "./host";
 import { Task } from "./task";
-import { BaseStrategy } from "./strategies/strategy";
-import { FIFOStrategy } from "./strategies/FIFOStrategy";
-import { taskEventEmitter, TaskEvent } from "./events";
+import { taskEventEmitter, TaskEvent } from "../events/task";
 import { TaskState } from "../cluster/task";
-import { Queue } from "../queues/Queue";
+import { BaseQueue } from "../queues/Queue";
 import { FIFOQueue } from "../queues/FIFOQueue";
+import { BaseStrategy } from "../strategies/strategy";
+import { FIFOStrategy } from "../strategies/FIFOStrategy";
 
 export class Scheduler extends BaseScheduler {
   hosts!: Host[]
 
-  constructor(hosts: Host[], strategy: BaseStrategy = new FIFOStrategy(), queue: Queue = new FIFOQueue()) {
+  constructor(hosts: Host[], strategy: BaseStrategy = new FIFOStrategy(), queue: BaseQueue = new FIFOQueue()) {
     super(hosts, strategy, queue);
-    
+
     // Listen for task completion events
     taskEventEmitter.on(TaskState.COMPLETED, this.handleTaskCompletion.bind(this));
+    taskEventEmitter.on(TaskState.CANCELLED, this.handleTaskCancelation.bind(this));
   }
 
   isBusyHost(): boolean {
@@ -31,30 +32,34 @@ export class Scheduler extends BaseScheduler {
   }
 
   dispatch() {
-    if (!this.strategy.shouldDispatch(this.queue)) {
-      return;
-    }
+    if (!this.strategy.shouldDispatch(this.queue)) return;
     // Get task-host mappings from strategy
     const mappings = this.strategy.selectTaskHostMappings(this.queue, this.hosts);
-    
+
     // Process mappings if any
     if (mappings) {
       for (const { task, host } of mappings) {
-        // Remove task from appropriate queue
-        this.queue.removeTask(task);
         // Dispatch the task
         host.execute(task);
+        // Remove task from appropriate queue
+        this.queue.removeTask(task);
       }
     }
     this.evaluateSystemLoad();
   }
 
   // Handle task completion events
-  private handleTaskCompletion(event: TaskEvent): void {
+  handleTaskCompletion(event: TaskEvent): void {
     // Let the strategy handle task completion if needed
     if (this.strategy.handleTaskCompletion) {
       this.strategy.handleTaskCompletion(event.task);
     }
   }
 
+  handleTaskCancelation(event: TaskEvent): void {
+    // Let the strategy handle task completion if needed
+    if (this.strategy.handleTaskCancelation) {
+      this.strategy.handleTaskCancelation(event.task);
+    }
+  }
 }

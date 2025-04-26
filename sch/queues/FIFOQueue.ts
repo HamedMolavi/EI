@@ -34,7 +34,7 @@ export class FIFOQueue extends BaseQueue {
   }
 
   getTask(): Task | undefined {
-    return this.tasks[this.tasks.length - 1];
+    return this.tasks[0];
   }
 
   popTask(): Task | undefined {

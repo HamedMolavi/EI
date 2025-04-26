@@ -8,6 +8,7 @@ import { Scheduler } from "./scheduler";
 import { Time } from "./time";
 import { FIFOStrategy } from "../strategies/FIFOStrategy";
 import { FIFOQueue } from "../queues/FIFOQueue";
+import { } from "../types/index";
 
 export let GLOBAL_TIME = new Time();
 const random = new Random();

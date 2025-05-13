@@ -1,5 +1,5 @@
 import { BaseTask, TaskState } from "../cluster/task";
-import { taskEventEmitter } from "./events";
+import { taskEventEmitter } from "../events/task";
 import { GLOBAL_TIME } from ".";
 
 export class Task extends BaseTask {

@@ -2,9 +2,7 @@ import { GLOBAL_TIME } from ".";
 import { BaseScheduler } from "../cluster/scheduler";
 import { Host } from "./host";
 import { Task } from "./task";
-import { BaseStrategy } from "./strategies/strategy";
-import { FIFOStrategy } from "./strategies/FIFOStrategy";
-import { taskEventEmitter, TaskEvent } from "./events";
+import { taskEventEmitter, TaskEvent } from "../events/task";
 import { TaskState } from "../cluster/task";
 import { Queue } from "../queues/Queue";
 import { FIFOQueue } from "./queues/FIFOQueue";
@@ -13,7 +11,7 @@ const TIME_SLOT = 10; // ms
 export class Scheduler extends BaseScheduler {
   hosts!: Host[]
 
-  constructor(hosts: Host[], strategy: BaseStrategy = new FIFOStrategy(), queue: Queue = new FIFOQueue()) {
+  constructor(hosts: Host[], strategy: BaseStrategy = new FIFOStrategy(), queue: BaseQueue = new FIFOQueue()) {
     super(hosts, strategy, queue);
     GLOBAL_TIME.onChange(time => {
       this.updateRewards();
@@ -39,9 +37,7 @@ export class Scheduler extends BaseScheduler {
   }
 
   dispatch() {
-    if (!this.strategy.shouldDispatch(this.queue)) {
-      return;
-    }
+    if (!this.strategy.shouldDispatch(this.queue)) return;
     // Get task-host mappings from strategy
     const mappings = this.strategy.selectTaskHostMappings(this.queue, this.hosts);
     console.log("Mapping", mappings)
@@ -58,12 +54,8 @@ export class Scheduler extends BaseScheduler {
   // Handle task completion events
   private handleTaskEvent(event: TaskEvent): void {
     // Let the strategy handle task completion if needed
-    if (this.strategy.handleTaskStateChange) {
-      this.strategy.handleTaskStateChange(event.task, event.type);
-    }
-    // Let the queue handle task completion if needed
-    if (this.queue.handleTaskStateChange) {
-      this.queue.handleTaskStateChange(event.task, event.type);
+    if (this.strategy.handleTaskCompletion) {
+      this.strategy.handleTaskCompletion(event.task);
     }
   }
 

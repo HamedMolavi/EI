@@ -5,6 +5,7 @@ import { showTime } from "../utils/time";
 export abstract class BaseHost {
   abstract init(): void;
   abstract execute(task: Task, ...args: any[]): void;
+  abstract isBusy(): boolean;
 
   constructor(public id: string, public mem: number, public net: number, public cpu: number, public transmissionDelay: number, public ip: string) {
     this.init();

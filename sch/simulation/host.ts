@@ -13,13 +13,18 @@ export class Host extends BaseHost {
   constructor(id: string, mem: number, net: number, cpu: number, transmissionDelay: number) {
     super(id, mem, net, cpu, transmissionDelay, '0.0.0.0');
   }
+
   init() {
     this.currentTask = undefined;
     this.taskReceivedTime = undefined;
     this.taskCompleteTime = +Infinity;
     this.reward = 0;
     this.penalty = 0;
-    GLOBAL_TIME.onChange(this.checkCompleted.bind(this))
+    GLOBAL_TIME.onChange(this.checkCompleted.bind(this));
+  }
+
+  isBusy(): boolean {
+    return !!this.currentTask;
   }
 
   execute(task: Task) {
@@ -68,6 +73,7 @@ export class Host extends BaseHost {
         this.currentTask = undefined;
         r = REWARDS['hard-sensitive-violate'](task);
         this.penalty += r;
+        task.canceled();
       }
     }
     return r;

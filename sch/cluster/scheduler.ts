@@ -1,17 +1,20 @@
 import { Random } from "random";
 import { BaseHost, Host } from "./host";
-import { BaseTask, Task } from "./task";
+import { BaseTask, Task, TaskState } from "./task";
 import { showTime } from "../utils/time";
-import { BaseStrategy } from "../simulation/strategies/strategy";
-import { Queue } from "../queues/Queue";
+import { BaseStrategy } from "../strategies/strategy";
+import { BaseQueue } from "../queues/Queue";
+import { TaskEvent } from "../events/task";
 const random = new Random();
 export abstract class BaseScheduler {
   reward!: number;
   penalty!: number;
-  abstract dispatch(...args: any[]): void
-  abstract isBusyHost(...args: any[]): boolean
+  abstract dispatch(...args: any[]): void;
+  abstract isBusyHost(...args: any[]): boolean;
+  abstract handleTaskCompletion(event: TaskEvent & { type: TaskState.COMPLETED }): void;
+  abstract handleTaskCancelation(event: TaskEvent & { type: TaskState.CANCELLED }): void;
 
-  constructor(public hosts: BaseHost[], public strategy: BaseStrategy, public queue: Queue) {
+  constructor(public hosts: BaseHost[], public strategy: BaseStrategy, public queue: BaseQueue) {
     this.init();
   }
   init() {
@@ -27,20 +30,20 @@ export abstract class BaseScheduler {
   evaluateSystemLoad() {
     let load = this.queue.size();
     let label = load > 5 ? "High Load" : "Normal Load";
-    // console.log(`Current Reward: ${this.reward}, Current Penalty: ${this.penalty}`);
-    // console.log(`System Load: ${label}`);
+    return label;
+    console.log(`Current Reward: ${this.reward}, Current Penalty: ${this.penalty}`);
+    console.log(`System Load: ${label}`);
   }
 
   setStrategy(strategy: BaseStrategy) {
     this.strategy = strategy;
   }
 }
+//////////////////////////////////////////////////////////////////////
 export class Scheduler extends BaseScheduler {
   hosts!: Host[]
-  queueSensitive!: Task[];
-  queueInsensitive!: Task[];
   dispatching: boolean;
-  constructor(hosts: Host[], strategy: BaseStrategy, queue: Queue) {
+  constructor(hosts: Host[], strategy: BaseStrategy, queue: BaseQueue) {
     super(hosts, strategy, queue);
     this.dispatching = false;
   }
@@ -71,4 +74,10 @@ export class Scheduler extends BaseScheduler {
     this.dispatching = false;
   }
 
+  handleTaskCancelation(event: TaskEvent & { type: TaskState.CANCELLED; }): void {
+
+  }
+  handleTaskCompletion(event: TaskEvent & { type: TaskState.COMPLETED; }): void {
+
+  }
 }

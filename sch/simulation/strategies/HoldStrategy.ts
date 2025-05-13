@@ -10,7 +10,7 @@ export class HoldStrategy extends BaseStrategy {
   constructor(holdDuration: number = 1000) { // Default hold duration of 1000ms
     super('Hold');
     this.holdDuration = holdDuration;
-    this.lastDispatchTime = GLOBAL_TIME.value;
+    this.lastDispatchTime = GLOBAL_TIME.time;
   }
 
   selectTaskHostMappings(sensitiveTasks: Task[], insensitiveTasks: Task[], availableHosts: Host[]): { task: Task, host: Host }[] | null {
@@ -27,17 +27,17 @@ export class HoldStrategy extends BaseStrategy {
 
 
   shouldDispatch(sensitiveTasks: Task[], insensitiveTasks: Task[]): boolean {
-    const timeSinceLastDispatch = GLOBAL_TIME.value - this.lastDispatchTime;
+    const timeSinceLastDispatch = GLOBAL_TIME.time - this.lastDispatchTime;
 
     // Always dispatch sensitive tasks immediately
     if (sensitiveTasks.length > 0) {
-      this.lastDispatchTime = GLOBAL_TIME.value;
+      this.lastDispatchTime = GLOBAL_TIME.time;
       return true;
     }
 
     // For insensitive tasks, check if we've waited long enough
     if (timeSinceLastDispatch >= this.holdDuration) {
-      this.lastDispatchTime = GLOBAL_TIME.value;
+      this.lastDispatchTime = GLOBAL_TIME.time;
       return true;
     }
 

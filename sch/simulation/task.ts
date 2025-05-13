@@ -15,23 +15,23 @@ export class Task extends BaseTask {
 
   // Mark task as started
   started(): void {
-    this.startTime = GLOBAL_TIME.value;
+    this.startTime = GLOBAL_TIME.time;
     this.state = TaskState.STARTED;
     taskEventEmitter.emit({
       type: TaskState.STARTED,
       task: this,
-      timestamp: GLOBAL_TIME.value
+      timestamp: GLOBAL_TIME.time
     });
   }
 
   // Mark task as completed
   completed(): void {
-    this.completeTime = GLOBAL_TIME.value;
+    this.completeTime = GLOBAL_TIME.time;
     this.state = TaskState.COMPLETED;
     taskEventEmitter.emit({
       type: TaskState.COMPLETED,
       task: this,
-      timestamp: GLOBAL_TIME.value
+      timestamp: GLOBAL_TIME.time
     });
   }
 
@@ -41,7 +41,7 @@ export class Task extends BaseTask {
     taskEventEmitter.emit({
       type: TaskState.CANCELLED,
       task: this,
-      timestamp: GLOBAL_TIME.value
+      timestamp: GLOBAL_TIME.time
     });
   }
 }

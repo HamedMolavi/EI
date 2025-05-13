@@ -46,7 +46,7 @@ export class DuplicationStrategy extends BaseStrategy {
     const duplicate = new Task(
       `backup-${task.id}`,
       task.type,
-      GLOBAL_TIME.value,
+      GLOBAL_TIME.time,
       task.value,
       task.cpu,
       task.mem,

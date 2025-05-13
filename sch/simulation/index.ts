@@ -6,6 +6,7 @@ import { Host } from "./host";
 import { TASK_TYPES } from "../types/taskTypes";
 import { Scheduler } from "./scheduler";
 import { Time } from "./time";
+import { } from "../types"
 
 export let GLOBAL_TIME = new Time();
 const random = new Random();
@@ -25,7 +26,7 @@ function generateRandomTask() {
   if (!type) throw new Error("Task types empty!");
   lastTaskId += 1;
   return new Task(
-    lastTaskId.toString(), type.taskType, GLOBAL_TIME.value,
+    lastTaskId.toString(), type.taskType, GLOBAL_TIME.time,
     type.value, type.cpu, type.mem, type.net, type.dist,
     type.sensitive, type.isSoftDeadline, type.deadlineT);
 }
@@ -35,15 +36,15 @@ function randomTaskArrival() {
   const tasks = [];
   for (let i = 0; i < j; i++) {
     let task = generateRandomTask();
-    console.log(`New task arrived: ${task.id}, Group: ${task.sensitive ? 'sensitive with deadline ' + task.deadlineTime + ' ms' : 'insensitive'} at time ${GLOBAL_TIME.value}`);
+    console.log(`New task arrived: ${task.id}, Group: ${task.sensitive ? 'sensitive with deadline ' + task.deadlineTime + ' ms' : 'insensitive'} at time ${GLOBAL_TIME.time}`);
     tasks.push(task);
   }
   return tasks;
 }
 
-while (GLOBAL_TIME.value <= MAX_TIME || scheduler.queue.size() > 0 || scheduler.isBusyHost()) {
-  if (GLOBAL_TIME.value <= MAX_TIME) randomTaskArrival().forEach(scheduler.addTask.bind(scheduler))
+while (GLOBAL_TIME.time <= MAX_TIME || scheduler.queue.size() > 0 || scheduler.isBusyHost()) {
+  if (GLOBAL_TIME.time <= MAX_TIME) randomTaskArrival().forEach(scheduler.addTask.bind(scheduler))
   scheduler.updateRewards();
-  scheduler.dispatch();
-  GLOBAL_TIME.value += TIME_SLOT;
+  if (GLOBAL_TIME.time % TIME_SLOT === 0) scheduler.dispatch();
+  GLOBAL_TIME.time += 1;
 }

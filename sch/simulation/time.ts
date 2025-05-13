@@ -2,11 +2,11 @@ export class Time {
   private _value: number = 0;
   private listeners: ((newValue: number) => void)[] = [];
 
-  get value(): number {
+  get time(): number {
     return this._value;
   }
 
-  set value(newValue: number) {
+  set time(newValue: number) {
     if (this._value !== newValue) {
       console.log('----', newValue);
       this._value = newValue;

@@ -24,10 +24,10 @@ export class Host extends BaseHost {
 
   execute(task: Task) {
     this.currentTask = task;
-    this.taskReceivedTime = GLOBAL_TIME.value;
+    this.taskReceivedTime = GLOBAL_TIME.time;
     const expectedCpuUsage = task.distribution();
     const expectedExecutionT = (expectedCpuUsage / this.cpu) * 1000; //ms
-    this.taskCompleteTime = GLOBAL_TIME.value + this.transmissionDelay + expectedExecutionT;
+    this.taskCompleteTime = GLOBAL_TIME.time + this.transmissionDelay + expectedExecutionT;
     console.log(`Host ${this.id}: Received task ${task.id}, complete expctation at ${this.taskCompleteTime}`);
 
     // Mark task as started
@@ -44,25 +44,26 @@ export class Host extends BaseHost {
     let r;
     if (!!task) {
       if (task.state === TaskState.CANCELLED) {
+        task.canceled();
         console.log(`Host ${this.id}: Task ${task.id} was cancelled`);
         this.currentTask = undefined;
         return;
       }
 
-      if (GLOBAL_TIME.value >= this.taskCompleteTime) {
+      if (GLOBAL_TIME.time >= this.taskCompleteTime) {
         task.completed();
         if (task.sensitive) {
-          r = REWARDS[`${task.isSoftDeadline ? 'soft' : 'hard'}-sensitive-${GLOBAL_TIME.value >= task.deadlineTime ? 'violate' : 'complete'}`](task);
+          r = REWARDS[`${task.isSoftDeadline ? 'soft' : 'hard'}-sensitive-${GLOBAL_TIME.time >= task.deadlineTime ? 'violate' : 'complete'}`](task);
           if (r > 0) this.reward += r;
           else this.penalty += r;
         } else {
           r = REWARDS['insensitive'](task);
           this.reward += r;
         }
-        console.log(`Host ${this.id}: Completed task ${task.id} at time ${GLOBAL_TIME.value}`);
+        console.log(`Host ${this.id}: Completed task ${task.id} at time ${GLOBAL_TIME.time}`);
         this.currentTask = undefined;
-      } else if (task.sensitive && !task.isSoftDeadline && GLOBAL_TIME.value >= task.deadlineTime) {
-        console.log(`Host ${this.id}: Abort task ${task.id}, now ${GLOBAL_TIME.value} - deadline ${task.deadlineTime}`);
+      } else if (task.sensitive && !task.isSoftDeadline && GLOBAL_TIME.time >= task.deadlineTime) {
+        console.log(`Host ${this.id}: Abort task ${task.id}, now ${GLOBAL_TIME.time} - deadline ${task.deadlineTime}`);
         this.currentTask = undefined;
         r = REWARDS['hard-sensitive-violate'](task);
         this.penalty += r;

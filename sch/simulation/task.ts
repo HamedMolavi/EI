@@ -15,6 +15,7 @@ export class Task extends BaseTask {
 
   // Mark task as started
   started(): void {
+    if (this.state === TaskState.STARTED) return; // already started
     this.startTime = GLOBAL_TIME.time;
     this.state = TaskState.STARTED;
     taskEventEmitter.emit({
@@ -26,6 +27,7 @@ export class Task extends BaseTask {
 
   // Mark task as completed
   completed(): void {
+    if (this.state === TaskState.COMPLETED) return; // already completed
     this.completeTime = GLOBAL_TIME.time;
     this.state = TaskState.COMPLETED;
     taskEventEmitter.emit({
@@ -37,6 +39,7 @@ export class Task extends BaseTask {
 
   // Mark task as cancelled
   canceled(): void {
+    if (this.state === TaskState.CANCELLED) return; // already canceled
     this.state = TaskState.CANCELLED;
     taskEventEmitter.emit({
       type: TaskState.CANCELLED,

@@ -1,6 +1,7 @@
-import { Queue } from "./Queue";
-import { Task } from "../cluster/task";
-import { TaskState } from "../cluster/task";
+import { Queue } from "../../queues/Queue";
+import { Task } from "../task";
+import { TaskState } from "../../cluster/task";
+import { GLOBAL_TIME } from "..";
 
 /**
  * First-In-First-Out Queue implementation
@@ -52,13 +53,18 @@ export class FIFOQueue extends Queue {
    * @returns The next task or undefined if the queue is empty
    */
   getTask(): Task | undefined {
-    return this.tasks[0];
+    return this.tasks.filter(t => t.state === TaskState.PENDING)[0];
   }
 
   removeTask(task: Task): void {
     this.tasks = this.tasks.filter(t => t.id !== task.id);
   }
 
+
+
   dropPassedDeadline(): void {
+    this.getTasks().forEach(task => {
+      if (GLOBAL_TIME.time >= task.deadlineTime) { this.removeTask(task); task.canceled() }
+    })
   }
 } 

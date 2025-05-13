@@ -1,9 +1,10 @@
 import { Task } from "../task";
 import { Host } from "../host";
 import { Queue } from "../../queues/Queue";
+import { TaskState } from "../../cluster/task";
 
 export abstract class BaseStrategy {
-  abstract handleTaskCompletion(task: Task): void;
+  abstract handleTaskStateChange(task: Task, newState: TaskState): void;
 
   constructor(public name: string) {
 
@@ -23,8 +24,7 @@ export abstract class BaseStrategy {
 
   /**
    * Determines if tasks should be dispatched at the current time
-   * @param sensitiveTasks Queue of sensitive tasks
-   * @param insensitiveTasks Queue of insensitive tasks
+   * @param queue Queue
    * @returns true if tasks should be dispatched, false otherwise
    */
   shouldDispatch(queue: Queue): boolean {

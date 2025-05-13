@@ -28,15 +28,15 @@ export class Host extends BaseHost {
     const expectedCpuUsage = task.distribution();
     const expectedExecutionT = (expectedCpuUsage / this.cpu) * 1000; //ms
     this.taskCompleteTime = GLOBAL_TIME.time + this.transmissionDelay + expectedExecutionT;
-    console.log(`Host ${this.id}: Received task ${task.id}, complete expctation at ${this.taskCompleteTime}`);
+    console.log(`Host ${this.id}: Received task ${task.id}, complete expctation at ${this.taskCompleteTime}, deadline at ${task.deadlineTime}`);
 
     // Mark task as started
     task.started();
 
-    const p = new Promise((res) => {
-      GLOBAL_TIME.onChange(this.checkCompleted.bind(this))
-    });
-    return p;
+    // const p = new Promise((res) => {
+    //   GLOBAL_TIME.onChange(this.checkCompleted.bind(this))
+    // });
+    // return p;
   }
 
   checkCompleted() {
@@ -63,6 +63,7 @@ export class Host extends BaseHost {
         console.log(`Host ${this.id}: Completed task ${task.id} at time ${GLOBAL_TIME.time}`);
         this.currentTask = undefined;
       } else if (task.sensitive && !task.isSoftDeadline && GLOBAL_TIME.time >= task.deadlineTime) {
+        task.canceled();
         console.log(`Host ${this.id}: Abort task ${task.id}, now ${GLOBAL_TIME.time} - deadline ${task.deadlineTime}`);
         this.currentTask = undefined;
         r = REWARDS['hard-sensitive-violate'](task);

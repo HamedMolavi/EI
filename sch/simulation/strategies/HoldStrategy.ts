@@ -48,7 +48,7 @@ export class HoldStrategy extends BaseStrategy {
     this.holdDuration = duration;
   }
 
-  handleTaskCompletion(task: Task): void {
+  handleTaskStateChange(task: Task): void {
     // Send results back to User
   }
 } 

@@ -7,16 +7,24 @@ import { FIFOStrategy } from "./strategies/FIFOStrategy";
 import { taskEventEmitter, TaskEvent } from "./events";
 import { TaskState } from "../cluster/task";
 import { Queue } from "../queues/Queue";
-import { FIFOQueue } from "../queues/FIFOQueue";
+import { FIFOQueue } from "./queues/FIFOQueue";
+const TIME_SLOT = 10; // ms
 
 export class Scheduler extends BaseScheduler {
   hosts!: Host[]
 
   constructor(hosts: Host[], strategy: BaseStrategy = new FIFOStrategy(), queue: Queue = new FIFOQueue()) {
     super(hosts, strategy, queue);
-    
-    // Listen for task completion events
-    taskEventEmitter.on(TaskState.COMPLETED, this.handleTaskCompletion.bind(this));
+    GLOBAL_TIME.onChange(time => {
+      this.updateRewards();
+      this.queue.dropPassedDeadline();
+      if (time % TIME_SLOT === 0) this.dispatch();
+    })
+
+    // Listen for task events
+    for (const event of Object.values(TaskState)) {
+      taskEventEmitter.on(event, this.handleTaskEvent.bind(this));
+    }
   }
 
   isBusyHost(): boolean {
@@ -36,12 +44,10 @@ export class Scheduler extends BaseScheduler {
     }
     // Get task-host mappings from strategy
     const mappings = this.strategy.selectTaskHostMappings(this.queue, this.hosts);
-    
+    console.log("Mapping", mappings)
     // Process mappings if any
     if (mappings) {
       for (const { task, host } of mappings) {
-        // Remove task from appropriate queue
-        this.queue.removeTask(task);
         // Dispatch the task
         host.execute(task);
       }
@@ -50,10 +56,14 @@ export class Scheduler extends BaseScheduler {
   }
 
   // Handle task completion events
-  private handleTaskCompletion(event: TaskEvent): void {
+  private handleTaskEvent(event: TaskEvent): void {
     // Let the strategy handle task completion if needed
-    if (this.strategy.handleTaskCompletion) {
-      this.strategy.handleTaskCompletion(event.task);
+    if (this.strategy.handleTaskStateChange) {
+      this.strategy.handleTaskStateChange(event.task, event.type);
+    }
+    // Let the queue handle task completion if needed
+    if (this.queue.handleTaskStateChange) {
+      this.queue.handleTaskStateChange(event.task, event.type);
     }
   }
 

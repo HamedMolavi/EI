@@ -2,6 +2,8 @@ import { BaseStrategy } from "./strategy";
 import { Task } from "../task";
 import { Host } from "../host";
 import { GLOBAL_TIME } from "..";
+import { Queue } from "../../queues/Queue";
+import { TaskState } from "../../cluster/task";
 
 export class DuplicationStrategy extends BaseStrategy {
   private duplicationCount: number;
@@ -13,40 +15,32 @@ export class DuplicationStrategy extends BaseStrategy {
     this.dispatchedTasks = {};
   }
 
-  selectTaskHostMapping(sensitiveTasks: Task[], insensitiveTasks: Task[], availableHosts: Host[]): { task: Task, host: Host }[] | null {
-    let task: Task | null = null;
-    // First check sensitive tasks
-    if (sensitiveTasks.length > 0) {
-      task = sensitiveTasks[0];
-    }
-    // Then check insensitive tasks
-    if (insensitiveTasks.length > 0) {
-      task = insensitiveTasks[0];
-    }
+  selectTaskHostMappings(queue: Queue, hosts: Host[]): { task: Task, host: Host }[] | null {
+    let freeHosts = hosts.filter(h => !h.currentTask);
+    console.log(freeHosts)
+    if (!freeHosts.length) return null;
+    let task = queue.getTask();
+    console.log(task)
     if (!task) return null;
-    const duplicates = Array(Math.min(this.duplicationCount, availableHosts.length)).fill(0).map((_, i) => this.duplicateTask(task));
-    if (!this.dispatchedTasks[task.id]) {
-      this.dispatchedTasks[task.id] = [];
-    };
+
+    const duplicates = Array(Math.min(this.duplicationCount, freeHosts.length - 1)).fill(task)
+      .map(t => this.duplicateTask(t));
+    if (!this.dispatchedTasks[task.id]) this.dispatchedTasks[task.id] = [];
+
     this.dispatchedTasks[task.id].push(...duplicates, task);
-    return duplicates.map((duplicate, i) => ({ task: duplicate, host: availableHosts[i] }));
+    return this.dispatchedTasks[task.id].map((task, i) => ({ task, host: freeHosts[i] }));
   }
 
-  shouldDispatch(sensitiveTasks: Task[], insensitiveTasks: Task[]): boolean {
+  shouldDispatch(queue: Queue): boolean {
     // Always dispatch if there are tasks available
-    return sensitiveTasks.length > 0 || insensitiveTasks.length > 0;
+    return queue.size() > 0;
   }
 
-  /**
-   * Creates duplicates of a task
-   * @param task The task to duplicate
-   * @returns duplicated task
-   */
   private duplicateTask(task: Task): Task {
     const duplicate = new Task(
-      `backup-${task.id}`,
+      `backup-${crypto.randomUUID().slice(0, 3)}-${task.id}`,
       task.type,
-      GLOBAL_TIME.time,
+      task.arriveTime,
       task.value,
       task.cpu,
       task.mem,
@@ -59,25 +53,19 @@ export class DuplicationStrategy extends BaseStrategy {
     return duplicate;
   }
 
-  /**
-   * Handles task completion
-   * @param task The completed task
-   */
-  handleTaskCompletion(task: Task): void {
-    const originalTaskId = task.id.replace('backup-', '');
-    if (this.dispatchedTasks[originalTaskId]) {
-      const tasksToBeCancelled = this.dispatchedTasks[originalTaskId].filter(t => t.id !== task.id);
-      tasksToBeCancelled.forEach(task => {
-        task.canceled();
-      });
-      this.dispatchedTasks[originalTaskId] = [];
+  handleTaskStateChange(task: Task, newState: TaskState): void {
+    if (newState === TaskState.COMPLETED) {
+      const originalTaskId = task.id.replace(/backup-...-/, '');
+      if (this.dispatchedTasks[originalTaskId]) {
+        const tasksToBeCancelled = this.dispatchedTasks[originalTaskId].filter(t => t.id !== task.id);
+        tasksToBeCancelled.forEach(task => {
+          task.canceled();
+        });
+        this.dispatchedTasks[originalTaskId] = [];
+      }
     }
   }
 
-  /**
-   * Sets the number of duplicates to create for each task
-   * @param count Number of duplicates
-   */
   setDuplicationCount(count: number): void {
     this.duplicationCount = count;
   }

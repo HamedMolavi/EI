@@ -51,5 +51,11 @@ export abstract class Queue {
    * @param task The task whose state changed
    * @param newState The new state of the task
    */
-  abstract handleTaskStateChange(task: Task, newState: TaskState): void;
+  handleTaskStateChange(task: Task, newState: TaskState): void {
+    if ([TaskState.COMPLETED, TaskState.CANCELLED].includes(newState)) {
+      this.removeTask(task);
+    }
+  }
+  
+  abstract dropPassedDeadline(): void;
 } 

@@ -7,6 +7,9 @@ import { TASK_TYPES } from "../types/taskTypes";
 import { Scheduler } from "./scheduler";
 import { Time } from "./time";
 import { } from "../types"
+import { FIFOStrategy } from "./strategies/FIFOStrategy";
+import { FIFOQueue } from "./queues/FIFOQueue";
+import { DuplicationStrategy } from "./strategies/DuplicationStrategy";
 
 export let GLOBAL_TIME = new Time();
 const random = new Random();
@@ -14,12 +17,13 @@ const random = new Random();
 //////////////////////
 const isIt = random.uniformBoolean();
 const HOW_MANY_TASKS_IN_A_TIMESLOT_FUNCTION = random.uniformInt(0, 2);
-const TIME_SLOT = 10; // ms
 const MAX_TIME = 50; // ms
 const HOSTS = [new Host('1', 16_777_216, 10_000, 3_500_000_000, 1), new Host('2', 16_777_216, 10_000, 3_500_000_000, 2)];
 //////////////////////
 let lastTaskId = 0;
-const scheduler = new Scheduler(HOSTS);
+const strategy = new DuplicationStrategy();
+const queue = new FIFOQueue();
+const scheduler = new Scheduler(HOSTS, strategy, queue);
 
 function generateRandomTask() {
   const type = random.choice(Object.values(TASK_TYPES));
@@ -42,9 +46,7 @@ function randomTaskArrival() {
   return tasks;
 }
 
-while (GLOBAL_TIME.time <= MAX_TIME || scheduler.queue.size() > 0 || scheduler.isBusyHost()) {
+while (GLOBAL_TIME.time <= MAX_TIME ) { //|| scheduler.queue.size() > 0 || scheduler.isBusyHost()
   if (GLOBAL_TIME.time <= MAX_TIME) randomTaskArrival().forEach(scheduler.addTask.bind(scheduler))
-  scheduler.updateRewards();
-  if (GLOBAL_TIME.time % TIME_SLOT === 0) scheduler.dispatch();
   GLOBAL_TIME.time += 1;
 }

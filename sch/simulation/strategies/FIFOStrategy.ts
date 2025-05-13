@@ -19,7 +19,7 @@ export class FIFOStrategy extends BaseStrategy {
     return queue.size() > 0;
   }
 
-  handleTaskCompletion(task: Task): void {
+  handleTaskStateChange(task: Task): void {
     // Send results back to User
   }
 }

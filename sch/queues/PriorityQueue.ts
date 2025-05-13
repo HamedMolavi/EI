@@ -41,6 +41,13 @@ export class PriorityQueue extends Queue {
     return this.tasks.sensitive.shift() || this.tasks.insensitive.shift();
   }
 
+  removeTask(task: Task): void {
+    this.tasks = {
+      sensitive: this.tasks.sensitive.filter(t => task.id !== t.id),
+      insensitive: this.tasks.insensitive.filter(t => task.id !== t.id)
+    };
+  }
+
   /**
    * Handle task state changes
    * @param task The task whose state changed

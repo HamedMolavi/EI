@@ -134,6 +134,10 @@ It requires these input parameter:
 * `completed()`
 * `canceled()`
 
+## Strategies
+
+### `DuplicationStrategy.ts`
+
 ## Technical Implementation Details
 
 ### Task Execution Flow

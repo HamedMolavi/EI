@@ -9,25 +9,41 @@ import tempfile
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
+# ---------------- CONFIG ----------------
+
+
+def load_env(path):
+  env = {}
+  with open(path) as f:
+    for line in f:
+      line = line.strip()
+      if not line or line.startswith("#"):
+        continue
+      key, value = line.split("=", 1)
+      env[key.strip()] = value.strip()
+  return env
+
+
 BASE = Path("/EI")
+ENV_PATH = BASE / "scripts" / "benchmark.env"
+ENV = load_env(ENV_PATH)
+
+CPU_FRACTIONS = [float(x) for x in ENV["CPU_FRACTIONS"].split(",")]
+PERIOD = int(ENV["PERIOD"])
+CONCURRENCY = int(ENV["CONCURRENCY"])
+TASKS = int(ENV["TASKS"])
+WORKER = ENV["WORKER"]
+
 DATA_DIR = BASE / "data"
 IMG_ZIP = DATA_DIR / "images.zip"
 
 SCRIPTS_DIR = BASE / "scripts"
-WORKER = "worker2"
 WORKER_PATH = SCRIPTS_DIR / (WORKER + ".py")
 
 RESULTS = BASE / "reports"
 RESULTS.mkdir(parents=True, exist_ok=True)
 
-# ---------------- CONFIG ----------------
-
-CPU_FRACTIONS = [0.1, 1]  # maximum runnable time per period
-PERIOD = 100_000  # micro seconds
-CONCURRENCY = 1
-TASKS = 1
 CGROUP = "imgbench"
-
 CGROUP_ROOT = "/sys/fs/cgroup"
 
 # ---------------- ZIP SETUP ----------------

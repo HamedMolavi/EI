@@ -1,0 +1,4 @@
+elapsed_wall_ms,cpu_user_ms,cpu_sys_ms,cpu_total_ms,mode,source
+4126.51,4990.0,830.0,5820.0,warm,zip
+173.826,1090.0,110.0,1200.0,warm,zip
+174.488,1070.0,180.0,1250.0,warm,zip

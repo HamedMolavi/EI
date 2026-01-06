@@ -187,7 +187,7 @@ def main():
         writer = csv.DictWriter(
             f,
             fieldnames=["elapsed_wall_ms", "cpu_user_sec", "cpu_sys_sec",
-                        "cpu_total_sec", "source"]
+                        "cpu_total_sec", "mode", "source"]
         )
         writer.writeheader()
 

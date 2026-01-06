@@ -11,7 +11,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 BASE = Path("/EI")
 DATA_DIR = BASE / "data"
-IMG_ZIP = DATA_DIR / "archive.zip"
+IMG_ZIP = DATA_DIR / "images.zip"
 
 SCRIPTS_DIR = BASE / "scripts"
 WORKER = "worker2"

@@ -28,8 +28,8 @@ BASE = Path("/EI")
 ENV_PATH = BASE / "scripts" / ".env"
 ENV = load_env(ENV_PATH)
 
-CPU_FRACTIONS = [float(x) for x in ENV["CPU_FRACTIONS"].split(",")]
-PERIOD = int(ENV["PERIOD"])
+CPU_FRACTIONS = [float(x) for x in ENV["CPU_FRACTIONS"].split(",")]   # maximum runnable time per period
+PERIOD = int(ENV["PERIOD"])   # micro seconds
 CONCURRENCY = int(ENV["CONCURRENCY"])
 TASKS = int(ENV["TASKS"])
 WORKER = ENV["WORKER"]

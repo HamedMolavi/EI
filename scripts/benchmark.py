@@ -25,7 +25,7 @@ def load_env(path):
 
 
 BASE = Path("/EI")
-ENV_PATH = BASE / "scripts" / "benchmark.env"
+ENV_PATH = BASE / "scripts" / ".env"
 ENV = load_env(ENV_PATH)
 
 CPU_FRACTIONS = [float(x) for x in ENV["CPU_FRACTIONS"].split(",")]

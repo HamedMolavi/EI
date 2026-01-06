@@ -143,3 +143,4 @@ tmp_Dockerfile
 assets
 *temp*
 face_DB
+data/*

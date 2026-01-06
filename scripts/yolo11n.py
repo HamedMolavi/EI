@@ -13,7 +13,7 @@ parser.add_argument('--single-input', action='store_true',
 parser.add_argument('--cpu', action='store_true', help='Run on cpu')
 args = parser.parse_args()
 
-image_dir = '/ultralytics/val2017'
+image_dir = 'datasets/ultralytics/val2017/'
 current_file_directory = dirname(abspath(__file__))
 now = datetime.datetime.now()
 time_str = now.strftime("%m%d%M%S")
@@ -21,7 +21,7 @@ device = "cpu" if args.cpu else "0"
 
 
 # Load the YOLOv11 Nano model
-model = YOLO('/ultralytics/yolo11n.pt')
+model = YOLO('ultralytics/yolo11n.pt')
 images = next(walk(image_dir))[2]
 l = len(images)
 sample_image = choice(images)

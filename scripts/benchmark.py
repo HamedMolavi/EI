@@ -32,6 +32,7 @@ CPU_FRACTIONS = [float(x) for x in ENV["CPU_FRACTIONS"].split(",")]   # maximum 
 PERIOD = int(ENV["PERIOD"])   # micro seconds
 CONCURRENCY = int(ENV["CONCURRENCY"])
 TASKS = int(ENV["TASKS"])
+RAN_TASKS = 0
 WORKER = ENV["WORKER"]
 
 DATA_DIR = BASE / "data"
@@ -99,6 +100,8 @@ def run_one(cgroup_path):
   img_path, is_temp = pick_image()
 
   start = time.monotonic_ns()
+  RAN_TASKS+=1
+  print("running ",RAN_TASKS)
   proc = subprocess.Popen(
       ["python3", WORKER_PATH, str(img_path)],
       preexec_fn=lambda: add_self_to_cgroup(cgroup_path)

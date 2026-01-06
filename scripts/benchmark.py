@@ -102,6 +102,7 @@ def pick_image():
 def run_one_cold(cgroup_path):
   img_path, is_temp = pick_image()
 
+  print(f"running {img_path} on {WORKER}...")
   start = time.monotonic_ns()
   proc = subprocess.Popen(
       ["python3", WORKER_PATH, str(img_path)],
@@ -145,6 +146,7 @@ def run_warm_loop(cgroup_path):
   def run_one_warm():
     img_path, is_temp = pick_image()
 
+    print(f"running {img_path} on {WORKER}...")
     # CPU snapshot BEFORE request
     cpu_before = ps.cpu_times()
     start = time.monotonic_ns()

@@ -1,4 +1,4 @@
-elapsed_wall_ms,cpu_user_sec,cpu_sys_sec,cpu_total_sec,source
+elapsed_wall_ms,cpu_user_ms,cpu_sys_ms,cpu_total_ms,source
 643.526,410.107,99.54,509.647,zip
 474.586,340.282,96.079,436.361,zip
 959.316,366.538,149.031,515.569,zip

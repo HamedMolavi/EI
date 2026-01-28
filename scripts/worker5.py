@@ -4,7 +4,10 @@ import pywt
 import numpy as np
 from PIL import Image
 
+# translating a color image to grayscale
+# Returns a converted copy of this image
 img = Image.open(sys.argv[1]).convert("L")
+
 arr = np.asarray(img, dtype=np.float32)
 
 pywt.dwt2(arr, "haar")

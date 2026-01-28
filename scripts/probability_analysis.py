@@ -17,7 +17,7 @@ DENSE_POINTS = 5000         # dense x-axis for PDF/CDF
 
 
 def main(csv_path):
-  csv_path = Path(csv_path)
+  csv_path = Path("/EI/reports") / csv_path
   out_img = csv_path.with_suffix(".png")
 
   df = pd.read_csv(csv_path)

@@ -3,7 +3,7 @@ from typing import List, Optional, Set
 from policies.base import SchedulingPolicy
 from core.host import Host
 from core.task import Task
-from statistics.tail import tail_probability
+from statistics.tail import conv_tail_probability, tail_probability
 
 
 class ReservationPolicy(SchedulingPolicy):
@@ -82,22 +82,15 @@ class ReservationPolicy(SchedulingPolicy):
     """
     x = incoming.deadline
 
-    probs = []
+    task_types = [incoming.task_type]
 
     if host.current_task:
-      probs.append(
-          tail_probability(host.current_task.task_type, x)
-      )
+      task_types.append(host.current_task.task_type)
 
     for q in host.queue:
-      probs.append(
-          tail_probability(q.task_type, x)
-      )
+      task_types.append(q.task_type)
 
-    out = tail_probability(incoming.task_type, x)
-    for prob in probs:
-      out = out * prob
-    return out
+    return conv_tail_probability(task_types, x)
   # -------------------------------------------------
 
   def select_host(

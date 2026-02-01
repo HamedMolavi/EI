@@ -5,7 +5,7 @@ from core.replay import ReplayTaskLoader
 from core.replay_scheduler import PolicyReplaySimulator
 from policies.shortest_queue import ShortestQueuePolicy
 from metrics.report import generate_report
-from simulation.policies.reservation import ReservationPolicy
+from policies.reservation import ReservationPolicy
 
 MODE = "simulate"   # or "replay"
 TRACE_PATH = "task_trace.jsonl"
@@ -35,7 +35,7 @@ def main():
         hosts=hosts,
         policy=ReservationPolicy(
           hosts=hosts, reserve_count=1, load_threshold=0.85),
-        policy=ShortestQueuePolicy(),
+        # policy=ShortestQueuePolicy(),
         # arrival_rate=0.001,
         arrival_rate=0.5 *
         sum(map(lambda h: h.speed, hosts)) / task_types[0].mean,
@@ -46,21 +46,21 @@ def main():
     )
     sim.run()
     tasks = sim.completed_tasks
+    report = generate_report(sim.rejected, tasks)
+    print(report)
+  # else:
+  #   loader = ReplayTaskLoader(TRACE_PATH, task_types)
+  #   tasks = loader.load()
 
-  else:
-    loader = ReplayTaskLoader(TRACE_PATH, task_types)
-    tasks = loader.load()
+  #   replay = PolicyReplaySimulator(
+  #       tasks=tasks,
+  #       hosts=hosts,
+  #       policy=ShortestQueuePolicy()
+  #   )
+  #   replay.run()
+  #   tasks = replay.completed_tasks
 
-    replay = PolicyReplaySimulator(
-        tasks=tasks,
-        hosts=hosts,
-        policy=ShortestQueuePolicy()
-    )
-    replay.run()
-    tasks = replay.completed_tasks
 
-  report = generate_report(sim.rejected, tasks)
-  print(report)
 
 
 if __name__ == "__main__":

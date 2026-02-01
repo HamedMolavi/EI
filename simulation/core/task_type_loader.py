@@ -14,10 +14,10 @@ def load_task_types(
 
         with open(path, "r") as f:
             reader = csv.DictReader(f)
-            if "elapsed_wall_ms" not in reader.fieldnames:
-                raise ValueError(
-                    f"'elapsed_wall_ms' column not found in {path}"
-                )
+            # if "elapsed_wall_ms" not in reader.fieldnames:
+            #     raise ValueError(
+            #         f"'elapsed_wall_ms' column not found in {path}"
+            #     )
 
             for row in reader:
                 try:

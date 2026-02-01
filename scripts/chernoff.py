@@ -9,7 +9,7 @@ import pandas as pd
 BASE = Path("/EI")
 RESULTS = BASE / "reports"
 COLUMN = "elapsed_wall_ms"
-DOMINANCE_LIMIT = 0.20      # 20%
+DOMINANCE_LIMIT = 0.40      # 20%
 T_START = 1e-4
 T_STEP = 1e-3
 T_MAX_HARD = 10.0           # absolute safety cap

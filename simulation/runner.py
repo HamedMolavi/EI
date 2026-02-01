@@ -5,6 +5,7 @@ from core.replay import ReplayTaskLoader
 from core.replay_scheduler import PolicyReplaySimulator
 from policies.shortest_queue import ShortestQueuePolicy
 from metrics.report import generate_report
+from simulation.policies.reservation import ReservationPolicy
 
 MODE = "simulate"   # or "replay"
 TRACE_PATH = "task_trace.jsonl"
@@ -32,6 +33,8 @@ def main():
     sim = Simulator(
         task_types=task_types,
         hosts=hosts,
+        policy=ReservationPolicy(
+          hosts=hosts, reserve_count=1, load_threshold=0.85),
         policy=ShortestQueuePolicy(),
         # arrival_rate=0.001,
         arrival_rate=0.5 *

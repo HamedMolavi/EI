@@ -1,3 +1,5 @@
+from email.mime import base
+
 from core.task_type_loader import load_task_types
 from core.host import Host
 from core.scheduler import Simulator
@@ -14,8 +16,8 @@ TRACE_PATH = "task_trace.jsonl"
 def make_hosts():
   return [
       Host(0, speed=1.0),
-      # Host(1, speed=1.0),
-      # Host(2, speed=1.0),
+      Host(1, speed=1.0),
+      Host(2, speed=1.0),
   ]
   return [Host(i, speed=1.0) for i in range(100)]
 
@@ -34,13 +36,13 @@ def main():
         task_types=task_types,
         hosts=hosts,
         policy=ReservationPolicy(
-          hosts=hosts, reserve_count=1, load_threshold=0.85),
+          hosts=hosts, reserve_count=1, load_threshold=0.85, base_policy=ShortestQueuePolicy()),
         # policy=ShortestQueuePolicy(),
         # arrival_rate=0.001,
         arrival_rate=0.5 *
         sum(map(lambda h: h.speed, hosts)) / task_types[0].mean,
         hard_prob=0.5,
-        max_completed=100,
+        max_completed=1000,
         seed=12,
         trace_path=TRACE_PATH
     )

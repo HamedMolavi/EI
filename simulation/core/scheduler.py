@@ -50,6 +50,62 @@ class Simulator:
   def schedule_event(self, time, kind, payload):
     heapq.heappush(self.event_q, Event(time, kind, payload))
 
+  def print_host_report(self):
+    """
+    Print a detailed snapshot of all hosts.
+    """
+    print("=" * 80)
+    print(f"HOST REPORT @ time = {self.now:.4f}")
+    print("=" * 80)
+
+    for h in self.hosts:
+      load = h.load(self.now)
+
+      print(f"\nHost {h.host_id}")
+      print(f"  Speed            : {h.speed}")
+      print(f"  Estimated load   : {load:.4f}")
+      print(f"  Queue length     : {len(h.queue)}")
+
+      # -------------------------
+      # Running task
+      # -------------------------
+      if h.current_task is None:
+        print("  Running task     : IDLE")
+      else:
+        t = h.current_task
+        remaining = max(0.0, h.busy_until - self.now)
+        slack = t.deadline - h.busy_until
+
+        print("  Running task     :")
+        print(f"    Task ID        : {t.task_id}")
+        print(f"    Type           : {t.task_type.id}")
+        print(f"    Hard           : {t.is_hard}")
+        print(f"    Remaining time : {remaining:.4f}")
+        print(f"    Deadline       : {t.deadline:.4f}")
+        print(f"    Slack          : {slack:.4f}")
+
+      # -------------------------
+      # Queue details
+      # -------------------------
+      if not h.queue:
+        print("  Queue            : EMPTY")
+      else:
+        print("  Queue:")
+        for i, q in enumerate(h.queue):
+          est_service = q.task_type.mean / h.speed
+          slack = q.deadline - (self.now + est_service)
+
+          print(
+              f"    [{i}] "
+              f"id={q.task_id} "
+              f"type={q.task_type.id} "
+              f"hard={q.is_hard} "
+              f"mean_svc={est_service:.4f} "
+              f"deadline={q.deadline:.4f} "
+              f"est_slack={slack:.4f}"
+          )
+
+    print("\n" + "=" * 80)
   # -----------------------
 
   def create_task(self) -> Task:
@@ -71,6 +127,7 @@ class Simulator:
   # -----------------------
 
   def handle_arrival(self):
+    self.print_host_report()
     task = self.create_task()
     # print(task.task_id, "Arrived:", self.now)
     host_id = self.policy.select_host(task, self.hosts, self.now)
@@ -113,7 +170,7 @@ class Simulator:
     host.current_task = task
     host.busy_until = task.finish_time
     # print(task.task_id, "START:", task.start_time,
-          # task.finish_time, task.deadline)
+    # task.finish_time, task.deadline)
 
     self.schedule_event(task.finish_time, EVENT_FINISH, host)
 
@@ -121,12 +178,13 @@ class Simulator:
 
   def handle_finish(self, host: Host):
     task = host.current_task
-    # print(task.task_id, "Finished:", task.start_time,
-    #       task.finish_time, task.deadline)
-    host.current_task = None
+    if task is not None:
+      # print(task.task_id, "Finished:", task.start_time,
+      #       task.finish_time, task.deadline)
+      host.current_task = None
 
-    self.completed_tasks.append(task)
-    self.write_trace(task)
+      self.completed_tasks.append(task)
+      self.write_trace(task)
 
     if host.queue:
       self.schedule_event(self.now, EVENT_START, host)

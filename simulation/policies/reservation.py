@@ -3,6 +3,7 @@ from typing import List, Optional, Set
 from policies.base import SchedulingPolicy
 from core.host import Host
 from core.task import Task
+from policies.random import Random
 from statistics.tail import conv_tail_probability, tail_probability
 
 
@@ -17,12 +18,14 @@ class ReservationPolicy(SchedulingPolicy):
       reserve_count: int = 1,
       tail_threshold: float = 0.2,
       load_threshold: float = 0.8,
+      base_policy: SchedulingPolicy = Random()
   ):
     self.hosts = hosts
     self.fastest = sorted(self.hosts, key=lambda h: h.speed, reverse=True)
     self.reserve_count = reserve_count
     self.tail_threshold = tail_threshold
     self.load_threshold = load_threshold
+    self.base_policy = base_policy
 
     self.reserved_hosts: Set[int] = set()
     self._initialize_reserves()
@@ -36,22 +39,6 @@ class ReservationPolicy(SchedulingPolicy):
 
   # -------------------------------------------------
 
-  def _host_load(self, host: Host, now: float) -> float:
-    """
-    Load estimate for a single host.
-    """
-    work = 0.0
-
-    if host.current_task:
-      work += max(0.0, host.busy_until - now)
-
-    for q in host.queue:
-      work += q.task_type.mean / host.speed
-
-    return work
-
-  # -------------------------------------------------
-
   def _update_reserves(self, now: float):
     """
     Reserve hosts based only on their own load.
@@ -62,14 +49,16 @@ class ReservationPolicy(SchedulingPolicy):
     loads: List[List[int | float]] = []
     for hid in self.reserved_hosts:
       host = self.hosts[hid]
-      load = self._host_load(host, now)
+      load = host.load(now)
       loads.append([hid, load])
     loads.sort(key=lambda x: x[1])
 
     if loads[0][1] >= self.load_threshold:
       if len(self.reserved_hosts) < len(self.hosts):
-        self.reserved_hosts.add(self.fastest[len(self.reserved_hosts)].host_id)
+        new_reserve_host = self.fastest[len(self.reserved_hosts)].host_id
+        self.reserved_hosts.add(new_reserve_host)
         self.reserve_count = self.reserve_count + 1
+        print(now, "adding a new reserved host", new_reserve_host)
     elif loads[0][1] <= 0.1:
       pass  # remove a reserved host
 
@@ -106,7 +95,7 @@ class ReservationPolicy(SchedulingPolicy):
     # Soft tasks: ignore reservation
     # -------------------------
     if not task.is_hard:
-      return min(hosts, key=lambda h: len(h.queue) + 1 if h.current_task is not None else 0).host_id
+      return self.base_policy.select_host(task, hosts, now)
 
     # -------------------------
     # Hard tasks: tail-aware logic
@@ -124,10 +113,7 @@ class ReservationPolicy(SchedulingPolicy):
           h for h in hosts if h.host_id in self.reserved_hosts
       ]
     if candidates:
-      return min(
-          candidates,
-          key=lambda h: len(h.queue) + 1 if h.current_task is not None else 0
-      ).host_id
+      return self.base_policy.select_host(task, candidates, now)
 
     # Otherwise: shortest queue globally
-    return min(hosts, key=lambda h: len(h.queue) + 1 if h.current_task is not None else 0).host_id
+    return self.base_policy.select_host(task, hosts, now)

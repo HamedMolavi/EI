@@ -145,3 +145,5 @@ assets
 face_DB
 data/*
 venv
+.venv
+task_trace.jsonl

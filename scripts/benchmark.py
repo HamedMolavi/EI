@@ -161,7 +161,6 @@ def run_batch(workers):
   start_times = {}
 
   # Send requests in parallel
-  print(f"running batch {batch} on {WORKER}...")
   for w, img_path, _ in batch:
     pid = w["proc"].pid
     cpu_before[pid] = w["ps"].cpu_times()

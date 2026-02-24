@@ -154,6 +154,7 @@ def run_batch(workers):
   # Prepare batch
   for w in workers:
     img_path, is_temp = pick_image()
+    print(img_path,img_path.exists())
     batch.append((w, img_path, is_temp))
 
   cpu_before = {}
@@ -166,6 +167,7 @@ def run_batch(workers):
     cpu_before[pid] = w["ps"].cpu_times()
     start_times[pid] = time.monotonic_ns()
 
+    print(str(img_path))
     w["proc"].stdin.write(str(img_path) + "\n")
     w["proc"].stdin.flush()
 

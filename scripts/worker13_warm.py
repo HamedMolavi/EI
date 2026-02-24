@@ -14,7 +14,7 @@ for line in sys.stdin:
     except:
       pass
   try:
-    model(path, device="cuda", verbose=False)
+    model(path, device="cpu", verbose=False)
   except Exception as e:
     print(f"Error processing {path}: {e}", file=sys.stderr)
   print("OK", flush=True)

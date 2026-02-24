@@ -88,8 +88,9 @@ def pick_image():
       delete=False
   )
 
-  with ZIP.open(member) as src:
-    tmp.write(src.read())
+  with zipfile.ZipFile(IMG_ZIP, "r") as z:
+      with z.open(member) as src:
+          tmp.write(src.read())
 
   tmp.close()
   return Path(tmp.name), True

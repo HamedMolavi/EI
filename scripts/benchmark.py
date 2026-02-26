@@ -43,7 +43,12 @@ N_MAX = int(ENV["N_MAX"])
 
 DATA_DIR = BASE / "data"
 IMG_ZIP = DATA_DIR / "images.zip"
-
+ZIP = zipfile.ZipFile(IMG_ZIP, "r")
+ZIP_IMAGE_LIST = [
+    name for name in ZIP.namelist()
+    if name.lower().endswith(".jpg") or name.lower().endswith(".jpeg")
+]
+    
 SCRIPTS_DIR = BASE / "scripts"
 WORKER_PATH = SCRIPTS_DIR / (WORKER + ".py")
 
@@ -99,14 +104,9 @@ def pick_image():
       delete=False
   )
 
-  with zipfile.ZipFile(IMG_ZIP, "r") as z:
-    ZIP_IMAGE_LIST = [
-        name for name in z.namelist()
-        if name.lower().endswith(".jpg") or name.lower().endswith(".jpeg")
-    ]
-    member = random.choice(ZIP_IMAGE_LIST)
-    with z.open(member) as src:
-      tmp.write(src.read())
+  member = random.choice(ZIP_IMAGE_LIST)
+  with ZIP.open(member) as src:
+    tmp.write(src.read())
 
   tmp.close()
   return Path(tmp.name), True

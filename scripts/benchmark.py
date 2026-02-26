@@ -174,7 +174,7 @@ def run_N_sequentials_on_parallel_poll(workers):
     for _ in range(n):
       img_path, is_temp = pick_image()
       img_paths.append((img_path, is_temp))
-    print("Task:",img_paths)
+    print("Task:", img_paths)
 
     batch.append((w, img_paths))
 
@@ -270,9 +270,11 @@ def run_parallel_pool(workers):
 
 
 def main():
-  try:
-    for cpu_fraction in CPU_FRACTIONS:
-      cgroup = create_cgroup(CGROUP, cpu_fraction)
+  for cpu_fraction in CPU_FRACTIONS:
+    cgroup = create_cgroup(CGROUP, cpu_fraction)
+    file_handle = None
+    workers = []
+    try:
       if IS_WARM:
         print("Running in warm mode")
         workers = start_warm_pool(cgroup, CONCURRENCY)
@@ -295,11 +297,6 @@ def main():
           for r in results:
             writer.writerow(r)
           tasks_remaining -= parallel_size
-        # shutdown
-        for w in workers:
-          w["proc"].stdin.write("__EXIT__\n")
-          w["proc"].stdin.flush()
-          w["proc"].wait()
 
       else:
         file_handle, writer = create_writer(["elapsed_wall_ms", "cpu_user_ms",
@@ -312,11 +309,17 @@ def main():
           for fut in as_completed(futures):
             writer.writerow(fut.result())
 
+    except KeyboardInterrupt:
+      break
+    finally:
+      # shutdown
+      for w in workers:
+        w["proc"].stdin.write("__EXIT__\n")
+        w["proc"].stdin.flush()
+        w["proc"].wait()
       delete_cgroup(cgroup)
-      file_handle.close()
-
-  except KeyboardInterrupt:
-    pass
+      if file_handle is not None:
+        file_handle.close()
 
 
 if __name__ == "__main__":

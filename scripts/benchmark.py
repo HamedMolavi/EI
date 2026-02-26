@@ -174,6 +174,7 @@ def run_N_sequentials_on_parallel_poll(workers):
     for _ in range(n):
       img_path, is_temp = pick_image()
       img_paths.append((img_path, is_temp))
+    print("Task:",img_paths)
 
     batch.append((w, img_paths))
 
@@ -273,8 +274,10 @@ def main():
     for cpu_fraction in CPU_FRACTIONS:
       cgroup = create_cgroup(CGROUP, cpu_fraction)
       if IS_WARM:
+        print("Running in warm mode")
         workers = start_warm_pool(cgroup, CONCURRENCY)
         if IS_BATCH:
+          print("Running in batch mode")
           file_handle, writer = create_writer(["elapsed_wall_ms", "cpu_user_ms",
                                               "cpu_sys_ms", "cpu_total_ms", "batch_size", "mode", "source",], cpu_fraction)
           fn = run_N_sequentials_on_parallel_poll

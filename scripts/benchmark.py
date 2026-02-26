@@ -314,9 +314,12 @@ def main():
     finally:
       # shutdown
       for w in workers:
-        w["proc"].stdin.write("__EXIT__\n")
-        w["proc"].stdin.flush()
-        w["proc"].wait()
+        try:
+          w["proc"].stdin.write("__EXIT__\n")
+          w["proc"].stdin.flush()
+          w["proc"].wait()
+        except:
+          print("worker already closed")
       delete_cgroup(cgroup)
       if file_handle is not None:
         file_handle.close()

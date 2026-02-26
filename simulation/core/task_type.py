@@ -3,6 +3,8 @@ from dataclasses import dataclass, field
 from typing import List
 import random
 
+from core.host import Host
+
 
 @dataclass
 class TaskType:
@@ -12,14 +14,20 @@ class TaskType:
   mean: float = field(init=False)
   max: float = field(init=False)
   variance: float = field(init=False)
+  arrival_rate: float = field(init=False)
   deadline: float = field(init=False)
   baseline_deadline_miss_probability: float = field(init=False)
+
+  def __init__(self, hosts: List[Host]) -> None:
+    self.total_hosts_speed = sum(map(lambda h: h.speed, hosts))
 
   def __post_init__(self):
     self.mean = sum(self.samples) / len(self.samples)
     self.max = max(self.samples)
-    self.deadline = 1.5*self.mean
-    self.baseline_deadline_miss_probability = self.tail_probability(self.deadline)
+    self.deadline = 1.5 * self.mean
+    self.baseline_deadline_miss_probability = self.tail_probability(
+      self.deadline)
+    self.arrival_rate = 0.5 * self.total_hosts_speed / self.mean
     print("Task type", self.id, self.mean, self.max)
     m = self.mean
     self.variance = sum((x - m) ** 2 for x in self.samples) / len(self.samples)

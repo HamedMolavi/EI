@@ -38,9 +38,6 @@ def main():
         policy=ReservationPolicy(
           hosts=hosts, reserve_count=1, load_threshold=0.85, base_policy=ShortestQueuePolicy()),
         # policy=ShortestQueuePolicy(),
-        # arrival_rate=0.001,
-        arrival_rate=0.5 *
-        sum(map(lambda h: h.speed, hosts)) / task_types[0].mean,
         hard_prob=0.5,
         max_completed=1000,
         seed=12,

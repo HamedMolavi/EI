@@ -16,7 +16,6 @@ class Simulator:
       task_types: List[TaskType],
       hosts: List[Host],
       policy: SchedulingPolicy,
-      arrival_rate: float,
       hard_prob: float,
       max_completed: int,
       seed: int,
@@ -25,7 +24,6 @@ class Simulator:
     self.task_types = task_types
     self.hosts = hosts
     self.policy = policy
-    self.arrival_rate = arrival_rate
     self.hard_prob = hard_prob
     self.max_completed = max_completed
 
@@ -40,12 +38,12 @@ class Simulator:
     self.trace_file = open(trace_path, "w")
 
   # -----------------------
-  def total_queue_length(self):
-    return sum(len(h.queue) + (1 if h.current_task else 0) for h in self.hosts)
+  # def total_queue_length(self):
+  #   return sum(len(h.queue) + (1 if h.current_task else 0) for h in self.hosts)
 
-  def effective_arrival_rate(self):
-    q = self.total_queue_length()
-    return self.arrival_rate / (1 + q)
+  # def effective_arrival_rate(self):
+  #   q = self.total_queue_length()
+  #   return self.arrival_rate / (1 + q)
 
   def schedule_event(self, time, kind, payload):
     heapq.heappush(self.event_q, Event(time, kind, payload))
@@ -143,7 +141,7 @@ class Simulator:
 
     if self.task_id_counter < self.max_completed:
       # next_arrival = self.rng.expovariate(self.effective_arrival_rate())
-      next_arrival = self.rng.expovariate(self.arrival_rate)
+      next_arrival = self.rng.expovariate(task.task_type.arrival_rate)
       self.schedule_event(self.now + next_arrival, EVENT_ARRIVAL, None)
 
   # -----------------------

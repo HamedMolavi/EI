@@ -4,6 +4,7 @@ import csv
 import random
 import subprocess
 import time
+from typing import List
 import zipfile
 import tempfile
 from pathlib import Path
@@ -33,8 +34,12 @@ CPU_FRACTIONS = [float(x) for x in ENV["CPU_FRACTIONS"].split(",")]
 PERIOD = int(ENV["PERIOD"])
 CONCURRENCY = int(ENV["CONCURRENCY"])
 TASKS = int(ENV["TASKS"])
+
 WORKER = ENV["WORKER"]
 IS_WARM = "warm" in WORKER.lower()
+IS_BATCH = "batch" in WORKER.lower()
+N_MIN = int(ENV["N_MIN"])
+N_MAX = int(ENV["N_MAX"])
 
 DATA_DIR = BASE / "data"
 IMG_ZIP = DATA_DIR / "images.zip"
@@ -48,13 +53,20 @@ RESULTS.mkdir(parents=True, exist_ok=True)
 CGROUP = "imgbench"
 CGROUP_ROOT = "/sys/fs/cgroup"
 
-# ---------------- ZIP SETUP ----------------
+# ---------------- Report writer ----------------
 
-ZIP = zipfile.ZipFile(IMG_ZIP, "r")
-ZIP_IMAGE_LIST = [
-    name for name in ZIP.namelist()
-    if name.lower().endswith(".jpg") or name.lower().endswith(".jpeg")
-]
+
+def create_writer(fieldnames: List[str], cpu_fraction: float = 1.0):
+  out_csv = RESULTS / f"{WORKER}_{cpu_fraction}_cpu_results.csv"
+  file_exists = out_csv.exists()
+  # open in append mode
+  f = open(out_csv, "a", newline="")
+  writer = csv.DictWriter(f, fieldnames=fieldnames)
+  # write header only if file did not exist or was empty
+  if not file_exists or out_csv.stat().st_size == 0:
+    writer.writeheader()
+  return f, writer
+
 
 # ---------------- CGROUP ----------------
 
@@ -81,7 +93,6 @@ def add_self_to_cgroup(cgroup_path):
 
 
 def pick_image():
-  member = random.choice(ZIP_IMAGE_LIST)
 
   tmp = tempfile.NamedTemporaryFile(
       suffix=".jpg",
@@ -89,8 +100,13 @@ def pick_image():
   )
 
   with zipfile.ZipFile(IMG_ZIP, "r") as z:
-      with z.open(member) as src:
-          tmp.write(src.read())
+    ZIP_IMAGE_LIST = [
+        name for name in z.namelist()
+        if name.lower().endswith(".jpg") or name.lower().endswith(".jpeg")
+    ]
+    member = random.choice(ZIP_IMAGE_LIST)
+    with z.open(member) as src:
+      tmp.write(src.read())
 
   tmp.close()
   return Path(tmp.name), True
@@ -147,14 +163,71 @@ def start_warm_pool(cgroup_path, size):
   return workers
 
 
-def run_batch(workers):
+def run_N_sequentials_on_parallel_poll(workers):
+  results = []
+  batch = []
+
+  for w in workers:
+    n = random.randint(N_MIN, N_MAX)
+
+    img_paths = []
+    for _ in range(n):
+      img_path, is_temp = pick_image()
+      img_paths.append((img_path, is_temp))
+
+    batch.append((w, img_paths))
+
+  cpu_before = {}
+  start_times = {}
+
+  # Send batch requests
+  for w, img_paths in batch:
+    pid = w["proc"].pid
+    cpu_before[pid] = w["ps"].cpu_times()
+    start_times[pid] = time.monotonic_ns()
+
+    line = " ".join(str(p) for p, _ in img_paths)
+    w["proc"].stdin.write(line + "\n")
+    w["proc"].stdin.flush()
+
+  # Wait for completion
+  for w, img_paths in batch:
+    w["proc"].stdout.readline()
+    end = time.monotonic_ns()
+
+    pid = w["proc"].pid
+    cpu_after = w["ps"].cpu_times()
+
+    elapsed = (end - start_times[pid]) / 1e6
+    cpu_user = (cpu_after.user - cpu_before[pid].user) * 1000
+    cpu_sys = (cpu_after.system - cpu_before[pid].system) * 1000
+
+    # Cleanup temp files
+    for img_path, is_temp in img_paths:
+      if is_temp:
+        img_path.unlink(missing_ok=True)
+
+    results.append({
+        "elapsed_wall_ms": round(elapsed, 3),
+        "cpu_user_ms": round(cpu_user, 3),
+        "cpu_sys_ms": round(cpu_sys, 3),
+        "cpu_total_ms": round(cpu_user + cpu_sys, 3),
+        "batch_size": len(img_paths),
+        "mode": "warm_batch",
+        "source": "zip",
+    })
+
+  return results
+
+
+def run_parallel_pool(workers):
   results = []
   batch = []
 
   # Prepare batch
   for w in workers:
     img_path, is_temp = pick_image()
-    print(img_path,img_path.exists())
+    print(img_path, img_path.exists())
     batch.append((w, img_path, is_temp))
 
   cpu_before = {}
@@ -166,7 +239,6 @@ def run_batch(workers):
     cpu_before[pid] = w["ps"].cpu_times()
     start_times[pid] = time.monotonic_ns()
 
-    print(str(img_path))
     w["proc"].stdin.write(str(img_path) + "\n")
     w["proc"].stdin.flush()
 
@@ -181,9 +253,6 @@ def run_batch(workers):
     elapsed = (end - start_times[pid]) / 1e6
     cpu_user = (cpu_after.user - cpu_before[pid].user) * 1000
     cpu_sys = (cpu_after.system - cpu_before[pid].system) * 1000
-
-    # if is_temp:
-    #   img_path.unlink(missing_ok=True)
 
     results.append({
         "elapsed_wall_ms": round(elapsed, 3),
@@ -203,55 +272,45 @@ def main():
   try:
     for cpu_fraction in CPU_FRACTIONS:
       cgroup = create_cgroup(CGROUP, cpu_fraction)
-
-      out_csv = RESULTS / f"{WORKER}_{cpu_fraction}_cpu_results.csv"
-
-      with open(out_csv, "w", newline="") as f:
-        writer = csv.DictWriter(
-            f,
-            fieldnames=[
-                "elapsed_wall_ms",
-                "cpu_user_ms",
-                "cpu_sys_ms",
-                "cpu_total_ms",
-                "mode",
-                "source",
-            ],
-        )
-        writer.writeheader()
-
-        if IS_WARM:
-          workers = start_warm_pool(cgroup, CONCURRENCY)
-
-          tasks_remaining = TASKS
-
-          while tasks_remaining > 0:
-            batch_size = min(CONCURRENCY, tasks_remaining)
-            batch_workers = workers[:batch_size]
-
-            batch_results = run_batch(batch_workers)
-
-            for r in batch_results:
-              writer.writerow(r)
-
-            tasks_remaining -= batch_size
-
-          # shutdown
-          for w in workers:
-            w["proc"].stdin.write("__EXIT__\n")
-            w["proc"].stdin.flush()
-            w["proc"].wait()
-
+      if IS_WARM:
+        workers = start_warm_pool(cgroup, CONCURRENCY)
+        if IS_BATCH:
+          file_handle, writer = create_writer(["elapsed_wall_ms", "cpu_user_ms",
+                                              "cpu_sys_ms", "cpu_total_ms", "batch_size", "mode", "source",], cpu_fraction)
+          fn = run_N_sequentials_on_parallel_poll
         else:
-          with ThreadPoolExecutor(max_workers=CONCURRENCY) as pool:
-            futures = [
-                pool.submit(run_one_cold, cgroup)
-                for _ in range(TASKS)
-            ]
-            for fut in as_completed(futures):
-              writer.writerow(fut.result())
+          file_handle, writer = create_writer(["elapsed_wall_ms", "cpu_user_ms",
+                                              "cpu_sys_ms", "cpu_total_ms", "mode", "source",], cpu_fraction)
+          fn = run_parallel_pool
+
+        tasks_remaining = TASKS
+        while tasks_remaining > 0:
+          parallel_size = min(CONCURRENCY, tasks_remaining)
+          parallel_workers = workers[:parallel_size]
+          results = fn(parallel_workers)
+
+          for r in results:
+            writer.writerow(r)
+          tasks_remaining -= parallel_size
+        # shutdown
+        for w in workers:
+          w["proc"].stdin.write("__EXIT__\n")
+          w["proc"].stdin.flush()
+          w["proc"].wait()
+
+      else:
+        file_handle, writer = create_writer(["elapsed_wall_ms", "cpu_user_ms",
+                                            "cpu_sys_ms", "cpu_total_ms", "mode", "source",], cpu_fraction)
+        with ThreadPoolExecutor(max_workers=CONCURRENCY) as pool:
+          futures = [
+              pool.submit(run_one_cold, cgroup)
+              for _ in range(TASKS)
+          ]
+          for fut in as_completed(futures):
+            writer.writerow(fut.result())
 
       delete_cgroup(cgroup)
+      file_handle.close()
 
   except KeyboardInterrupt:
     pass

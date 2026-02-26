@@ -8,7 +8,7 @@ class Task:
     arrival_time: float
     task_type: TaskType
     is_hard: bool
-    deadline: float
+    deadline_time: float
 
     execution_time: Optional[float] = None
     assigned_host: Optional[int] = None
@@ -19,4 +19,4 @@ class Task:
     def lateness(self):
         if self.finish_time is None:
             return None
-        return self.finish_time - self.deadline
+        return self.finish_time - self.deadline_time

@@ -4,7 +4,7 @@ from policies.base import SchedulingPolicy
 from core.host import Host
 from core.task import Task
 from policies.random import Random
-from statistics.tail import conv_tail_probability, tail_probability
+from statistics.tail import conv_tail_probability
 
 
 class ReservationPolicy(SchedulingPolicy):
@@ -69,7 +69,7 @@ class ReservationPolicy(SchedulingPolicy):
     Compute max tail probability that existing tasks on host
     exceed incoming hard task deadline.
     """
-    x = incoming.deadline
+    x = incoming.deadline_time
 
     task_types = [incoming.task_type]
 

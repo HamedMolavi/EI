@@ -27,7 +27,7 @@ class ReplayTaskLoader:
                     arrival_time=rec["arrival_time"],
                     task_type=tt,
                     is_hard=rec["is_hard"],
-                    deadline=rec["deadline"],
+                    deadline_time=rec["deadline"],
                 )
 
                 # Fixed execution time

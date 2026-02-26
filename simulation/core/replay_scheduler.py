@@ -72,7 +72,7 @@ class PolicyReplaySimulator:
 
         task = host.queue.pop(0)
 
-        if self.now > task.deadline and task.is_hard:
+        if self.now > task.deadline_time and task.is_hard:
             task.dropped = True
             self.completed_tasks.append(task)
             return

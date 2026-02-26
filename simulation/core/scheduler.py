@@ -74,14 +74,14 @@ class Simulator:
       else:
         t = h.current_task
         remaining = max(0.0, h.busy_until - self.now)
-        slack = t.deadline - h.busy_until
+        slack = t.deadline_time - h.busy_until
 
         print("  Running task     :")
         print(f"    Task ID        : {t.task_id}")
         print(f"    Type           : {t.task_type.id}")
         print(f"    Hard           : {t.is_hard}")
         print(f"    Remaining time : {remaining:.4f}")
-        print(f"    Deadline       : {t.deadline:.4f}")
+        print(f"    Deadline       : {t.deadline_time:.4f}")
         print(f"    Slack          : {slack:.4f}")
 
       # -------------------------
@@ -93,7 +93,7 @@ class Simulator:
         print("  Queue:")
         for i, q in enumerate(h.queue):
           est_service = q.task_type.mean / h.speed
-          slack = q.deadline - (self.now + est_service)
+          slack = q.deadline_time - (self.now + est_service)
 
           print(
               f"    [{i}] "
@@ -101,7 +101,7 @@ class Simulator:
               f"type={q.task_type.id} "
               f"hard={q.is_hard} "
               f"mean_svc={est_service:.4f} "
-              f"deadline={q.deadline:.4f} "
+              f"deadline={q.deadline_time:.4f} "
               f"est_slack={slack:.4f}"
           )
 
@@ -111,15 +111,14 @@ class Simulator:
   def create_task(self) -> Task:
     tt = self.rng.choice(self.task_types)
     is_hard = self.rng.random() < self.hard_prob
-    deadline = self.now + 1.5 * tt.mean
-    # deadline = self.now + tt.mean
+    deadline_time = self.now + tt.deadline
 
     task = Task(
         task_id=self.task_id_counter,
         arrival_time=self.now,
         task_type=tt,
         is_hard=is_hard,
-        deadline=deadline
+        deadline_time=deadline_time
     )
     self.task_id_counter += 1
     return task
@@ -155,7 +154,7 @@ class Simulator:
 
     task = host.queue.pop(0)
     # if self.now > task.deadline and task.is_hard:
-    if self.now > task.deadline:
+    if self.now > task.deadline_time:
       task.dropped = True
       self.completed_tasks.append(task)
       self.schedule_event(self.now, EVENT_START, host)
@@ -197,7 +196,7 @@ class Simulator:
         "arrival_time": task.arrival_time,
         "task_type": task.task_type.id,
         "is_hard": task.is_hard,
-        "deadline": task.deadline,
+        "deadline": task.deadline_time,
         "execution_time": task.execution_time,
         "assigned_host": task.assigned_host,
         "start_time": task.start_time,

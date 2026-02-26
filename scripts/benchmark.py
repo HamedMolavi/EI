@@ -174,9 +174,8 @@ def run_N_sequentials_on_parallel_poll(workers):
     for _ in range(n):
       img_path, is_temp = pick_image()
       img_paths.append((img_path, is_temp))
-    print("Task:", img_paths)
-
     batch.append((w, img_paths))
+    print("\ttask:", len(img_paths))
 
   cpu_before = {}
   start_times = {}
@@ -292,6 +291,7 @@ def main():
         while tasks_remaining > 0:
           parallel_size = min(CONCURRENCY, tasks_remaining)
           parallel_workers = workers[:parallel_size]
+          print("parallel run:", len(parallel_workers))
           results = fn(parallel_workers)
 
           for r in results:

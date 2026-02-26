@@ -5,23 +5,26 @@ from ultralytics import YOLO
 
 model = YOLO("ultralytics/yolo11n.pt")
 
-for line in sys.stdin:
+try:
+  for line in sys.stdin:
     line = line.strip()
 
     if not line:
-        continue
+      continue
 
     if line == "__EXIT__":
-        break
+      break
 
     paths = line.split()
 
     for path in paths:
-        model(path, device="cpu", verbose=False)
-        if path.startswith("/tmp/"):
-          try:
-            os.remove(path)
-          except:
-            pass
+      model(path, device="cpu", verbose=False)
+      if path.startswith("/tmp/"):
+        try:
+          os.remove(path)
+        except:
+          pass
 
     print("OK", flush=True)
+except KeyboardInterrupt:
+  print("worker closed...")
